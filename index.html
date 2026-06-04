@@ -1,70 +1,823 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumina Finance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0f2027',
+                            mid: '#203a43',
+                            light: '#2c5364',
+                            accent: '#10b981' // Emerald 500
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        body { background: #0f2027; color: white; min-height: 100vh; font-family: sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; }
-        .tab-content { display: none; } .tab-content.active { display: block; }
-    </style>
-</head>
-<body class="pb-32">
-    <main id="app-container" class="p-4"></main>
-    <nav class="glass fixed bottom-0 left-0 right-0 mx-4 mb-4 p-2 flex justify-between px-4">
-        <button onclick="switchTab('dashboard')" class="p-3">Dash</button>
-        <button onclick="switchTab('calendar')" class="p-3">Plan</button>
-    </nav>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
-
-        let appState = { payConfig: { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] }};
-        let activeTab = 'dashboard';
-        const db = getFirestore(initializeApp({ apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8", authDomain: "lumina-budget-68f2e.firebaseapp.com", projectId: "lumina-budget-68f2e" }));
-        const ref = doc(db, "budgetApp", "mainState");
-
-        async function init() {
-            await signInAnonymously(getAuth());
-            onSnapshot(ref, (s) => { if(s.exists()) { appState = s.data(); render(); } });
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            background-attachment: fixed;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        window.toggleWorkDay = (day) => {
-            if(appState.payConfig.workDays.includes(day)) appState.payConfig.workDays = appState.payConfig.workDays.filter(d => d !== day);
-            else appState.payConfig.workDays.push(day);
-            setDoc(ref, appState);
+        /* Glassmorphism Panel Utility */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hide scrollbar but keep functionality */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Keypad button press animation */
+        .key-press:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        /* iMessage Tail */
+        .message-tail {
+            position: absolute;
+            bottom: 0;
+            left: -8px;
+            width: 20px;
+            height: 20px;
+            background-color: #26252a;
+            border-bottom-right-radius: 16px;
+            z-index: -1;
+        }
+        .message-tail::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: #1c1c1e;
+            border-bottom-right-radius: 16px;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen font-sans antialiased overflow-x-hidden selection:bg-brand-accent selection:text-white">
+
+    <main id="app-content" class="pb-32 pt-6 px-4 max-w-lg mx-auto min-h-screen"></main>
+
+    <nav class="fixed bottom-0 w-full glass-panel border-t border-white/10 z-50 rounded-t-3xl pb-safe">
+        <div class="flex justify-around items-end max-w-lg mx-auto px-2 pt-2 pb-2 relative">
+            <button onclick="window.switchTab('dash')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="dash">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium tracking-wide">Dash</span>
+            </button>
+            
+            <button onclick="window.switchTab('bills')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="bills">
+                <i data-lucide="receipt" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium tracking-wide">Bills</span>
+            </button>
+
+            <div class="relative w-16 flex justify-center h-full">
+                <button onclick="window.switchTab('keypad')" class="absolute bottom-4 w-16 h-16 bg-brand-accent rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-[#203a43] text-white transform transition-transform active:scale-95 z-50">
+                    <i data-lucide="calculator" class="w-7 h-7"></i>
+                </button>
+            </div>
+
+            <button onclick="window.switchTab('plan')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="plan">
+                <i data-lucide="calendar-days" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium tracking-wide">Plan</span>
+            </button>
+
+            <button onclick="window.switchTab('debt')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="garage">
+                <i data-lucide="car-front" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium tracking-wide">Garage</span>
+            </button>
+        </div>
+    </nav>
+
+    <div id="loader" class="fixed inset-0 bg-[#0f2027] z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
+        <i data-lucide="loader-2" class="w-12 h-12 text-brand-accent animate-spin mb-4"></i>
+        <h1 class="text-2xl font-light tracking-widest text-white">LUMINA</h1>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // ----------------------------------------------------
+        // SYSTEM CONFIGURATION & DEFAULTS
+        // ----------------------------------------------------
+        const DEFAULT_STATE = {
+            accounts: {
+                "RBC Chequing": 2500,
+                "RBC Savings": 10000,
+                "BMO Chequing": 1200,
+                "BMO Savings": 5000,
+                "NEO": 350,
+                "Capital One": 0
+            },
+            payConfig: {
+                grossDaily: 601.87,
+                taxRate: 32.07,
+                dailyReimbursements: 85.72,
+                fixedDeductions: 132.94,
+                workDays: []
+            },
+            bills: [
+                // Period 1
+                { id: "b1", name: "Internet", amount: 185.00, period: 1, paid: false },
+                { id: "b2", name: "Phone - Rogers", amount: 436.00, period: 1, paid: false },
+                { id: "b3", name: "Easy Home", amount: 150.00, period: 1, paid: false },
+                { id: "b4", name: "Truck/TD Loan", amount: 404.00, period: 1, paid: false },
+                { id: "b5", name: "Auto Insurance - Wawanesa", amount: 520.00, period: 1, paid: false },
+                { id: "b6", name: "Child Support", amount: 545.50, period: 1, paid: false },
+                { id: "b7", name: "House Insurance - Apollo", amount: 38.00, period: 1, paid: false },
+                { id: "b8", name: "Counseling", amount: 220.00, period: 1, paid: false },
+                { id: "b9", name: "Credit Cards", amount: 200.00, period: 1, paid: false },
+                { id: "b10", name: "Spring Financial", amount: 80.00, period: 1, paid: false },
+                { id: "b11", name: "Subscriptions (Netflix, Spotify, etc)", amount: 70.15, period: 1, paid: false },
+                // Period 2
+                { id: "b12", name: "Rent", amount: 2400.00, period: 2, paid: false },
+                { id: "b13", name: "Utilities - Water", amount: 137.00, period: 2, paid: false },
+                { id: "b14", name: "Utilities - ATCO", amount: 311.00, period: 2, paid: false },
+                { id: "b15", name: "Easy Home", amount: 150.00, period: 2, paid: false },
+                { id: "b16", name: "Truck/TD Loan", amount: 404.00, period: 2, paid: false },
+                { id: "b17", name: "Daycare - Both girls", amount: 473.00, period: 2, paid: false },
+                { id: "b18", name: "Child Support", amount: 545.50, period: 2, paid: false },
+                { id: "b19", name: "Spring Financial", amount: 80.00, period: 2, paid: false },
+                { id: "b20", name: "Student Loans", amount: 240.00, period: 2, paid: false }
+            ],
+            debts: [
+                { id: "d3", name: "ENMAX Collections", balance: 800, minPayment: 50 },
+                { id: "d2", name: "Spring Financial", balance: 2500, minPayment: 150 },
+                { id: "d1", name: "TD Loan", balance: 12000, minPayment: 404 },
+                { id: "d4", name: "RIFCO", balance: 18000, minPayment: 600 }
+            ],
+            goals: {
+                "August Camping Trip": { target: 1500, saved: 0 }
+            },
+            garage: {
+                "Ford 6.0L Bulletproof": { target: 6500, saved: 0 }
+            }
         };
 
-        window.switchTab = (tab) => { activeTab = tab; render(); };
+        // ----------------------------------------------------
+        // GLOBAL STATE & FIREBASE INIT
+        // ----------------------------------------------------
+        let state = null; 
+        let currentTab = 'dash';
+        let dbRef = null;
+        
+        // Local UI State (Outside render loop, not synced to Firebase)
+        const uiState = {
+            keypadValue: '0',
+            showRealityCheck: false,
+            pendingExpenseAmount: 0
+        };
 
-        function render() {
-            const days = appState.payConfig.workDays.length;
-            const net = (days * appState.payConfig.grossDaily * (1 - appState.payConfig.taxRate/100)) - appState.payConfig.fixedDeductions + (days * appState.payConfig.dailyReimbursements);
+        // Firebase Auth & Init
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "",
+            authDomain: "dummy.firebaseapp.com",
+            projectId: "dummy-project",
+            storageBucket: "dummy.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123:web:123"
+        };
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'lumina-local-dev';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-            document.getElementById('app-container').innerHTML = `
-                <div id="tab-dashboard" class="tab-content ${activeTab === 'dashboard' ? 'active' : ''}">
-                    <div class="glass p-6 text-center">
-                        <h2 class="text-sm opacity-60">Live Projected Net</h2>
-                        <div class="text-4xl font-bold text-green-400">$${net.toFixed(2)}</div>
+        // Core Initialization
+        const init = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                // Fallback for local testing without Firebase configuration
+                state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+                finishLoading();
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userId = user.uid;
+                dbRef = doc(db, 'artifacts', appId, 'users', userId, 'lumina_state', 'default');
+                
+                // Fetch or Seed Default Document
+                try {
+                    const docSnap = await getDoc(dbRef);
+                    if (!docSnap.exists()) {
+                        await setDoc(dbRef, DEFAULT_STATE);
+                    }
+                    
+                    // The Single Source of Truth Subscription
+                    onSnapshot(dbRef, (doc) => {
+                        state = doc.data();
+                        triggerRender();
+                    }, (err) => console.error("Snapshot error:", err));
+
+                    finishLoading();
+                } catch(e) {
+                    console.error("Firestore Error:", e);
+                }
+            }
+        });
+
+        init();
+
+        const finishLoading = () => {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                triggerRender();
+            }, 500);
+        };
+
+        // ----------------------------------------------------
+        // UTILITY FUNCTIONS & MATH ENGINE
+        // ----------------------------------------------------
+        const formatMoney = (amount) => {
+            return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
+        };
+
+        const calculateNetPay = () => {
+            if(!state) return 0;
+            const days = state.payConfig.workDays.length;
+            if (days === 0) return 0;
+            
+            const gross = days * state.payConfig.grossDaily;
+            const taxFactor = 1 - (state.payConfig.taxRate / 100);
+            const reimbursements = days * state.payConfig.dailyReimbursements;
+            
+            // EXACT Formula provided in prompt
+            return (gross * taxFactor) - state.payConfig.fixedDeductions + reimbursements;
+        };
+
+        const calculateTotalBills = () => {
+            if(!state) return 0;
+            return state.bills.reduce((sum, bill) => sum + bill.amount, 0);
+        };
+
+        // Mutation Wrapper for Firebase updates
+        const updateFirebaseState = async (newStateObj) => {
+            if(dbRef && state) {
+                await setDoc(dbRef, newStateObj, { merge: true });
+            } else {
+                state = { ...state, ...newStateObj };
+                triggerRender();
+            }
+        };
+
+        // ----------------------------------------------------
+        // THE ANTI-JANK RENDER ENGINE
+        // ----------------------------------------------------
+        const triggerRender = () => {
+            if (!state) return;
+            // ANTI-JANK RULE: Capture Scroll Position
+            const scrollPos = window.scrollY;
+            
+            const appDiv = document.getElementById('app-content');
+            let html = '';
+
+            switch(currentTab) {
+                case 'dash': html = renderDash(); break;
+                case 'bills': html = renderBills(); break;
+                case 'keypad': html = renderKeypad(); break;
+                case 'plan': html = renderPlan(); break;
+                case 'garage': html = renderGarage(); break;
+            }
+
+            // Append Reality Check Modal if active
+            html += renderModals();
+
+            // Replace DOM Content
+            appDiv.innerHTML = html;
+            
+            // Update Active Nav Styles
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-accent');
+                btn.classList.add('text-slate-400');
+                if(btn.dataset.tab === currentTab) {
+                    btn.classList.add('text-brand-accent');
+                    btn.classList.remove('text-slate-400');
+                }
+            });
+
+            // Re-bind Icons
+            lucide.createIcons();
+
+            // ANTI-JANK RULE: Restore Scroll Position Instantly
+            window.scrollTo(0, scrollPos);
+        };
+
+        // ----------------------------------------------------
+        // RENDER MODULES
+        // ----------------------------------------------------
+
+        // 1. DASHBOARD
+        const renderDash = () => {
+            const netPay = calculateNetPay();
+            const totalBills = calculateTotalBills();
+            const surplus = netPay - totalBills;
+            const camping = state.goals["August Camping Trip"];
+            const campProgress = Math.min((camping.saved / camping.target) * 100, 100);
+
+            return `
+                <header class="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold tracking-tight text-white">Lumina</h1>
+                        <p class="text-brand-accent text-sm font-medium uppercase tracking-wider">Financial Command</p>
+                    </div>
+                    <div class="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-white/20">
+                        <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
+                    </div>
+                </header>
+
+                <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-accent/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                    <h2 class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-1">Live Projected Net</h2>
+                    <div class="text-5xl font-light text-white tracking-tighter mb-4">
+                        ${formatMoney(netPay)}
+                    </div>
+                    
+                    <div class="bg-slate-900/50 rounded-xl p-4 border border-white/5 flex items-start gap-3">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Projected Net minus total monthly bills (${formatMoney(totalBills)}) results in a 
+                                <strong class="${surplus >= 0 ? 'text-brand-accent' : 'text-red-400'}">
+                                    ${surplus >= 0 ? '+' : ''}${formatMoney(surplus)} ${surplus >= 0 ? 'Surplus' : 'Shortfall'}
+                                </strong>.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="glass-panel rounded-2xl p-4">
+                        <p class="text-xs text-slate-400 mb-1">Total Cash</p>
+                        <p class="text-xl font-semibold text-white">
+                            ${formatMoney(state.accounts["RBC Chequing"] + state.accounts["RBC Savings"] + state.accounts["BMO Chequing"] + state.accounts["BMO Savings"] + state.accounts["NEO"])}
+                        </p>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4">
+                        <p class="text-xs text-slate-400 mb-1">RBC Chequing</p>
+                        <p class="text-xl font-semibold text-blue-400">${formatMoney(state.accounts["RBC Chequing"])}</p>
                     </div>
                 </div>
-                <div id="tab-calendar" class="tab-content ${activeTab === 'calendar' ? 'active' : ''}">
-                    <div class="glass p-4 grid grid-cols-7 gap-2">
-                        ${Array.from({length: 30}, (_, i) => i + 1).map(day => `
-                            <div onclick="toggleWorkDay(${day})" class="aspect-square flex items-center justify-center rounded-lg cursor-pointer ${appState.payConfig.workDays.includes(day) ? 'bg-orange-500' : 'bg-gray-800'}">
-                                ${day}
+
+                <section class="glass-panel rounded-3xl p-6 mb-6">
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold flex items-center gap-2">
+                                <i data-lucide="tent" class="w-5 h-5 text-amber-500"></i>
+                                August Camping
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">${formatMoney(camping.saved)} of ${formatMoney(camping.target)}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-bold text-brand-accent">${Math.round(campProgress)}%</span>
+                        </div>
+                    </div>
+                    <div class="h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5 shadow-inner relative">
+                        <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-accent to-emerald-400 rounded-full transition-all duration-1000 ease-out" style="width: ${campProgress}%">
+                            <div class="w-full h-full opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')]"></div>
+                        </div>
+                    </div>
+                </section>
+            `;
+        };
+
+        // 2. BILLS
+        const renderBills = () => {
+            const period1 = state.bills.filter(b => b.period === 1);
+            const period2 = state.bills.filter(b => b.period === 2);
+            
+            const renderBillItem = (bill) => `
+                <div class="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onclick="window.toggleBill('${bill.id}')">
+                    <div class="flex items-center gap-4">
+                        <div class="w-6 h-6 rounded border ${bill.paid ? 'bg-brand-accent border-brand-accent text-white' : 'border-slate-500 flex items-center justify-center'} transition-colors flex-shrink-0">
+                            ${bill.paid ? '<i data-lucide="check" class="w-4 h-4 mx-auto mt-1"></i>' : ''}
+                        </div>
+                        <div>
+                            <p class="font-medium ${bill.paid ? 'text-slate-400 line-through' : 'text-white'}">${bill.name}</p>
+                        </div>
+                    </div>
+                    <span class="font-semibold ${bill.paid ? 'text-slate-500' : 'text-slate-200'}">${formatMoney(bill.amount)}</span>
+                </div>
+            `;
+
+            const renderPeriodCard = (title, items, periodNum) => {
+                const totalUnpaid = items.filter(b=>!b.paid).reduce((sum, b) => sum + b.amount, 0);
+                return `
+                <section class="glass-panel rounded-3xl overflow-hidden mb-6">
+                    <div class="p-4 bg-slate-900/40 border-b border-white/10 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i>
+                            ${title}
+                        </h2>
+                        <span class="text-sm font-medium text-slate-300">Unpaid: ${formatMoney(totalUnpaid)}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        ${items.map(renderBillItem).join('')}
+                    </div>
+                    ${totalUnpaid > 0 ? `
+                    <div class="p-4 border-t border-white/5 bg-slate-800/30">
+                        <button onclick="window.paydayRush(${periodNum})" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 font-semibold shadow-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                            <i data-lucide="zap" class="w-5 h-5"></i> Payday Rush (Deduct from RBC)
+                        </button>
+                    </div>` : ''}
+                </section>
+                `;
+            };
+
+            return `
+                <header class="mb-6">
+                    <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Bills & Expenses</h1>
+                    <p class="text-slate-400 text-sm">Manage your monthly obligations.</p>
+                </header>
+                ${renderPeriodCard("Period 1 (1st - 15th)", period1, 1)}
+                ${renderPeriodCard("Period 2 (16th - 31st)", period2, 2)}
+            `;
+        };
+
+        // 3. KEYPAD
+        const renderKeypad = () => {
+            const displayVal = uiState.keypadValue === '0' ? '0.00' : (parseInt(uiState.keypadValue) / 100).toFixed(2);
+            
+            return `
+                <header class="mb-4 text-center">
+                    <h1 class="text-xl font-bold tracking-tight text-white opacity-80">Expense Entry</h1>
+                </header>
+
+                <div class="glass-panel rounded-3xl p-8 mb-8 text-right flex flex-col justify-end min-h-[140px]">
+                    <span class="text-slate-400 text-sm font-medium mb-2 pr-2">Total Amount</span>
+                    <div class="text-6xl font-light text-white tracking-tighter overflow-hidden">
+                        $${displayVal}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 max-w-[320px] mx-auto mb-8">
+                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `
+                        <button onclick="window.keypadPress('${num}')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">
+                            ${num}
+                        </button>
+                    `).join('')}
+                    <button onclick="window.keypadPress('00')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-xl font-medium shadow-sm transition-transform flex items-center justify-center">
+                        00
+                    </button>
+                    <button onclick="window.keypadPress('0')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">
+                        0
+                    </button>
+                    <button onclick="window.keypadPress('DEL')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-lg font-medium shadow-sm transition-transform flex items-center justify-center text-red-400">
+                        <i data-lucide="delete" class="w-7 h-7"></i>
+                    </button>
+                </div>
+
+                <div class="max-w-[320px] mx-auto pb-4">
+                    <button onclick="window.submitExpense()" class="w-full py-4 rounded-2xl bg-brand-accent text-white font-bold text-lg shadow-[0_4px_20px_rgba(16,185,129,0.4)] active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i> Enter Expense
+                    </button>
+                </div>
+            `;
+        };
+
+        // 4. PLAN (Forecaster)
+        const renderPlan = () => {
+            const numDays = state.payConfig.workDays.length;
+            const gross = numDays * state.payConfig.grossDaily;
+            const tax = gross * (state.payConfig.taxRate / 100);
+            const reimbursements = numDays * state.payConfig.dailyReimbursements;
+            const fixed = state.payConfig.fixedDeductions;
+            const net = calculateNetPay();
+
+            // 30 day grid logic
+            let gridHtml = '';
+            for(let i=1; i<=30; i++) {
+                const isSelected = state.payConfig.workDays.includes(i);
+                gridHtml += `
+                    <button onclick="window.toggleDay(${i})" class="aspect-square rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center border ${isSelected ? 'bg-brand-accent border-brand-accent text-white shadow-lg shadow-emerald-500/30 scale-105' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            return `
+                <header class="mb-6">
+                    <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Shift Forecaster</h1>
+                    <p class="text-slate-400 text-sm">Tap days to schedule shifts and forecast pay.</p>
+                </header>
+
+                <section class="glass-panel rounded-3xl p-5 mb-6 text-sm">
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b border-white/10">
+                        <span class="text-slate-300">Days Scheduled</span>
+                        <span class="font-bold text-white text-lg bg-slate-800 px-3 py-1 rounded-lg">${numDays}</span>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Gross Income</span>
+                            <span class="text-slate-200">${formatMoney(gross)}</span>
+                        </div>
+                        <div class="flex justify-between text-red-300/80">
+                            <span>Est. Tax (${state.payConfig.taxRate}%)</span>
+                            <span>-${formatMoney(tax)}</span>
+                        </div>
+                        <div class="flex justify-between text-red-300/80">
+                            <span>Fixed Deductions</span>
+                            <span>-${formatMoney(fixed)}</span>
+                        </div>
+                        <div class="flex justify-between text-brand-accent">
+                            <span>Reimbursements</span>
+                            <span>+${formatMoney(reimbursements)}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-4 border-t border-white/10 mt-2">
+                        <span class="font-semibold text-slate-200">Net Take-Home</span>
+                        <span class="font-bold text-xl text-brand-accent">${formatMoney(net)}</span>
+                    </div>
+                </section>
+
+                <section class="glass-panel rounded-3xl p-5">
+                    <div class="grid grid-cols-7 gap-2">
+                        <div class="col-span-7 flex justify-between text-xs text-slate-500 font-medium px-1 mb-2">
+                            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                        </div>
+                        ${gridHtml}
+                    </div>
+                </section>
+            `;
+        };
+
+        // 5. GARAGE (Wealth)
+        const renderGarage = () => {
+            const netPay = calculateNetPay();
+            const totalBills = calculateTotalBills();
+            const surplus = Math.max(0, netPay - totalBills); // Free income
+            
+            // Sort debts smallest to largest
+            const sortedDebts = [...state.debts].sort((a,b) => a.balance - b.balance);
+            const smallestDebt = sortedDebts[0];
+            
+            let payoffText = "Calculate by scheduling shifts";
+            if (surplus > 0 && smallestDebt) {
+                const monthlyAttack = smallestDebt.minPayment + surplus;
+                const months = Math.ceil(smallestDebt.balance / monthlyAttack);
+                payoffText = `<span class="text-brand-accent font-bold">${months}</span> paychecks away`;
+            }
+
+            const ford = state.garage["Ford 6.0L Bulletproof"];
+            const fordProgress = Math.min((ford.saved / ford.target) * 100, 100);
+
+            return `
+                <header class="mb-6">
+                    <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Wealth & Garage</h1>
+                    <p class="text-slate-400 text-sm">Snowball debts and build the rig.</p>
+                </header>
+
+                <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden border-blue-500/30">
+                    <div class="absolute -right-4 -top-4 opacity-10">
+                        <i data-lucide="crosshair" class="w-32 h-32 text-blue-500"></i>
+                    </div>
+                    <h2 class="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <i data-lucide="target" class="w-4 h-4"></i> Snowball Target
+                    </h2>
+                    ${smallestDebt ? `
+                        <div class="mb-3">
+                            <p class="text-2xl font-bold text-white">${smallestDebt.name}</p>
+                            <p class="text-slate-400 text-sm">Remaining: ${formatMoney(smallestDebt.balance)}</p>
+                        </div>
+                        <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+                            <p class="text-sm text-slate-300">Available Attack Surplus: <strong class="text-white">${formatMoney(surplus)}</strong></p>
+                            <p class="text-sm mt-1">Status: ${payoffText}</p>
+                        </div>
+                    ` : `<p class="text-slate-400">All debts clear!</p>`}
+                </section>
+
+                <section class="glass-panel rounded-3xl p-5 mb-6">
+                    <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Active Debts</h3>
+                    <div class="space-y-4">
+                        ${sortedDebts.map(debt => `
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-slate-200">${debt.name}</p>
+                                    <p class="text-xs text-slate-500">Min: ${formatMoney(debt.minPayment)}/mo</p>
+                                </div>
+                                <span class="font-semibold text-red-300/80">${formatMoney(debt.balance)}</span>
                             </div>
                         `).join('')}
                     </div>
+                </section>
+
+                <section class="glass-panel rounded-3xl p-6">
+                     <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+                        <i data-lucide="wrench" class="w-4 h-4"></i> The Garage
+                    </h2>
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <p class="font-medium text-white">Ford 6.0L Build</p>
+                            <p class="text-xs text-slate-400">${formatMoney(ford.saved)} / ${formatMoney(ford.target)}</p>
+                        </div>
+                        <div class="h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full bg-slate-400 rounded-full transition-all duration-1000" style="width: ${fordProgress}%"></div>
+                        </div>
+                    </div>
+                </section>
+            `;
+        };
+
+        // Render Modals Overlay
+        const renderModals = () => {
+            if(!uiState.showRealityCheck) return '';
+            
+            const amount = uiState.pendingExpenseAmount;
+            
+            return `
+                <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
+                    <div class="bg-[#1c1c1e] rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl transform scale-100 transition-transform duration-300 overflow-hidden">
+                        
+                        <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-slate-700/50">
+                            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                                FY
+                            </div>
+                            <div>
+                                <div class="font-bold text-white text-sm tracking-wide">Future You</div>
+                                <div class="text-blue-500 text-[10px] font-semibold">iMessage</div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-5 space-y-5">
+                            <div class="relative bg-[#26252a] text-white p-4 rounded-2xl rounded-bl-none w-[90%] text-sm leading-relaxed shadow-md">
+                                Hey man, I'm you from next month. Are you really about to drop <strong>${formatMoney(amount)}</strong> right now?<br><br>That money could go straight into the August Camping Trip or the 6.0L build. Do me a solid and stash it.
+                                <div class="message-tail"></div>
+                            </div>
+                            
+                            <div class="space-y-3 pt-2">
+                                <button onclick="window.handleRealityCheck('save')" class="w-full py-3.5 rounded-xl bg-brand-accent text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                    <i data-lucide="tent" class="w-5 h-5"></i> Yeah, save it for Camp
+                                </button>
+                                <button onclick="window.handleRealityCheck('spend')" class="w-full py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700 active:scale-95 transition-transform">
+                                    Nah, I'm buying it
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
-        }
-        init();
+        };
+
+        // ----------------------------------------------------
+        // EVENT HANDLERS (Attached to Window for inline HTML)
+        // ----------------------------------------------------
+        
+        window.switchTab = (tab) => {
+            if (currentTab === tab) return;
+            currentTab = tab;
+            triggerRender();
+        };
+
+        // Plan Tab Interactions
+        window.toggleDay = (day) => {
+            let newDays = [...state.payConfig.workDays];
+            if (newDays.includes(day)) {
+                newDays = newDays.filter(d => d !== day);
+            } else {
+                newDays.push(day);
+            }
+            updateFirebaseState({
+                payConfig: { ...state.payConfig, workDays: newDays }
+            });
+        };
+
+        // Bills Tab Interactions
+        window.toggleBill = (id) => {
+            const newBills = state.bills.map(b => 
+                b.id === id ? { ...b, paid: !b.paid } : b
+            );
+            updateFirebaseState({ bills: newBills });
+        };
+
+        window.paydayRush = (periodNum) => {
+            let deductionAmount = 0;
+            const newBills = state.bills.map(b => {
+                if (b.period === periodNum && !b.paid) {
+                    deductionAmount += b.amount;
+                    return { ...b, paid: true };
+                }
+                return b;
+            });
+            
+            const newRbcBalance = state.accounts["RBC Chequing"] - deductionAmount;
+            
+            updateFirebaseState({
+                bills: newBills,
+                accounts: { ...state.accounts, "RBC Chequing": newRbcBalance }
+            });
+        };
+
+        // Keypad Interactions
+        window.keypadPress = (val) => {
+            if (val === 'DEL') {
+                uiState.keypadValue = uiState.keypadValue.length > 1 ? uiState.keypadValue.slice(0, -1) : '0';
+            } else {
+                if (uiState.keypadValue === '0' && val !== '00') {
+                    uiState.keypadValue = val;
+                } else if (uiState.keypadValue !== '0') {
+                    // Prevent insanely large numbers mapping to BigInt crash limit
+                    if(uiState.keypadValue.length < 8) {
+                        uiState.keypadValue += val;
+                    }
+                }
+            }
+            triggerRender(); // Re-render local state only, no firebase push
+        };
+
+        window.submitExpense = () => {
+            const amount = parseInt(uiState.keypadValue) / 100;
+            if (amount <= 0) return;
+
+            if (amount > 50) {
+                uiState.pendingExpenseAmount = amount;
+                uiState.showRealityCheck = true;
+                triggerRender();
+            } else {
+                // Auto process small expenses
+                const newChequing = state.accounts["RBC Chequing"] - amount;
+                updateFirebaseState({
+                    accounts: { ...state.accounts, "RBC Chequing": newChequing }
+                });
+                uiState.keypadValue = '0';
+                currentTab = 'dash';
+                triggerRender();
+            }
+        };
+
+        window.handleRealityCheck = (choice) => {
+            const amount = uiState.pendingExpenseAmount;
+            let updates = {};
+
+            if (choice === 'save') {
+                const currentSaved = state.goals["August Camping Trip"].saved;
+                updates = {
+                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
+                    goals: { 
+                        ...state.goals, 
+                        "August Camping Trip": { ...state.goals["August Camping Trip"], saved: currentSaved + amount } 
+                    }
+                };
+            } else {
+                // Just spend it
+                updates = {
+                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount }
+                };
+            }
+
+            uiState.showRealityCheck = false;
+            uiState.pendingExpenseAmount = 0;
+            uiState.keypadValue = '0';
+            currentTab = 'dash';
+            
+            updateFirebaseState(updates);
+        };
+
+        // Initial Icon setup just in case
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
+
     </script>
 </body>
 </html>
