@@ -50,8 +50,6 @@
         .dark #loading-overlay { background: var(--tw-colors-glass-dark); }
         .spinner { border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid #3b82f6; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Custom Logan Message Modal Styles */
         .message-tail { position: absolute; bottom: 0; left: -8px; width: 20px; height: 20px; background-color: #26252a; border-bottom-right-radius: 16px; z-index: -1; }
         .message-tail::after { content: ""; position: absolute; bottom: 0; left: -10px; width: 20px; height: 20px; background-color: #1c1c1e; border-bottom-right-radius: 16px; }
     </style>
@@ -73,21 +71,18 @@
     <!-- LOGAN TEXT MESSAGE MODAL -->
     <div id="logan-modal" class="hidden fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-[#1c1c1e] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
-            <!-- Contact Header -->
             <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-gray-800">
                 <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-xl overflow-hidden shadow-inner">
-                    <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=Logan&hair=shortHairShortFlat&hairColor=2c1b18&backgroundColor=b6e3f4" alt="Logan">
+                    <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=Logan&hair=shortHairShortFlat&hairColor=2c1b18&backgroundColor=b6e3f4" alt="Logan" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div class="font-bold text-white text-sm tracking-wide">Logan</div>
                     <div class="text-blue-500 text-[10px] font-semibold">iMessage</div>
                 </div>
             </div>
-            <!-- Message Body -->
             <div class="p-5 space-y-5">
                 <div class="relative bg-[#26252a] text-white p-4 rounded-2xl rounded-bl-none w-[90%] text-sm leading-relaxed shadow-md" id="logan-msg">
                     <div class="message-tail"></div>
-                    <!-- Dynamic text loads here -->
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button onclick="confirmLogan(false)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-bold text-sm transition">Nah, save it</button>
@@ -97,7 +92,6 @@
         </div>
     </div>
 
-    <!-- Header -->
     <header class="glass-panel mx-4 mt-4 p-4 flex justify-between items-center sticky top-4 z-50">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">L</div>
@@ -112,13 +106,12 @@
 
     <main class="p-4" id="app-container"></main>
 
-    <!-- Bottom Navigation -->
     <nav class="glass-panel fixed bottom-0 left-0 right-0 mx-4 nav-safe p-2 z-50 flex justify-between px-4 pb-2">
         <button onclick="switchTab('dashboard')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all active" data-target="dashboard"><i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Dash</span></button>
         <button onclick="switchTab('bills')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="bills"><i data-lucide="receipt" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Bills</span></button>
         <button onclick="switchTab('keypad')" class="nav-btn flex flex-col items-center p-2 text-blue-500 dark:text-blue-400 scale-110 -translate-y-2 glass-panel transition-all" style="border-radius: 50%; width: 56px; height: 56px; justify-content: center; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" data-target="keypad"><i data-lucide="plus" class="w-8 h-8"></i></button>
         <button onclick="switchTab('calendar')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="calendar"><i data-lucide="calendar" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Plan</span></button>
-        <button onclick="switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="wealth"><i data-lucide="trending-up" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Wealth</span></button>
+        <button onclick="switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="wealth"><i data-lucide="wrench" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Garage</span></button>
     </nav>
 
 <script>
@@ -163,11 +156,14 @@ const DEFAULT_DATA = {
         { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 } 
     ],
     camping: { saved: 0, target: 1500 },
+    garage: [ { id: 'g1', name: 'Ford 6.0L Bulletproof & 500HP Build', target: 6500, saved: 0 } ],
+    hitch: { active: true, start: new Date().toISOString().split('T')[0], end: new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0], total: 16000 },
     goals: [], keypadAmount: "0", keypadCategory: "Convenience Grabs"
 };
 
 let appState = null;
 let editingBillId = null;
+let liveGrindTimer = null;
 
 window.forceStartOffline = function() {
     appState = DEFAULT_DATA; 
@@ -182,32 +178,25 @@ async function initCloudState() {
     const networkTimeout = setTimeout(() => { debug.innerText = "Network blocked by browser. Opening offline..."; window.forceStartOffline(); }, 5000);
 
     try {
-        debug.innerText = "Step 1/3: Authenticating...";
         await signInAnonymously(auth);
-        
-        debug.innerText = "Step 2/3: Checking Cloud Data...";
         const docSnap = await getDoc(stateDocRef);
         
-        debug.innerText = "Step 3/3: Syncing interface...";
         if (!docSnap.exists()) {
             await setDoc(stateDocRef, DEFAULT_DATA);
             appState = DEFAULT_DATA;
         } else {
             appState = docSnap.data();
             
+            // Auto-Inject Missing Features for backward compatibility
+            let needsUpdate = false;
             if (!appState.debts.find(d => d.name.includes('ENMAX'))) {
-                appState.debts.push(
-                    { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 },
-                    { id: 'd5', name: 'GODAY INC (Collection)', balance: 559, minPayment: 0, interest: 0 },
-                    { id: 'd6', name: 'PRESTOCASH (Collection)', balance: 1011, minPayment: 0, interest: 0 },
-                    { id: 'd7', name: 'RIFCO AUTO (Collection)', balance: 17613, minPayment: 0, interest: 0 }
-                );
-                await setDoc(stateDocRef, appState);
+                appState.debts.push( { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 }, { id: 'd5', name: 'GODAY INC (Collection)', balance: 559, minPayment: 0, interest: 0 }, { id: 'd6', name: 'PRESTOCASH (Collection)', balance: 1011, minPayment: 0, interest: 0 }, { id: 'd7', name: 'RIFCO AUTO (Collection)', balance: 17613, minPayment: 0, interest: 0 } );
+                needsUpdate = true;
             }
-            if (!appState.camping) {
-                appState.camping = { saved: 0, target: 1500 };
-                await setDoc(stateDocRef, appState);
-            }
+            if (!appState.camping) { appState.camping = { saved: 0, target: 1500 }; needsUpdate = true; }
+            if (!appState.garage) { appState.garage = [ { id: 'g1', name: 'Ford 6.0L Bulletproof & 500HP Build', target: 6500, saved: 0 } ]; needsUpdate = true; }
+            if (!appState.hitch) { appState.hitch = { active: true, start: new Date().toISOString().split('T')[0], end: new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0], total: 16000 }; needsUpdate = true; }
+            if (needsUpdate) await setDoc(stateDocRef, appState);
         }
 
         clearTimeout(networkTimeout); 
@@ -216,6 +205,8 @@ async function initCloudState() {
             if (snapshot.exists()) {
                 appState = snapshot.data();
                 if (!appState.camping) appState.camping = { saved: 0, target: 1500 };
+                if (!appState.garage) appState.garage = [];
+                if (!appState.hitch) appState.hitch = { active: false, start: '', end: '', total: 0 };
                 renderApp();
             }
         });
@@ -226,8 +217,6 @@ async function initCloudState() {
         
     } catch (error) {
         clearTimeout(networkTimeout);
-        console.error(error);
-        debug.innerText = "Error: " + error.message;
         document.getElementById('cloud-status').classList.add('bg-red-500');
         setTimeout(() => window.forceStartOffline(), 2000);
     }
@@ -262,25 +251,27 @@ function editAccount(id) {
     const acc = appState.accounts.find(a => a.id === id);
     if(acc) {
         const newVal = prompt(`Update balance for ${acc.name} ($):`, acc.balance);
-        if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) {
-            acc.balance = parseFloat(newVal);
-            saveState();
-        }
+        if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) { acc.balance = parseFloat(newVal); saveState(); }
     }
 }
 
 function updateCampingTarget() {
     const newVal = prompt(`Set new goal amount for the August Camping Trip ($):`, appState.camping.target);
-    if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal) && parseFloat(newVal) > 0) {
-        appState.camping.target = parseFloat(newVal);
-        saveState();
-    }
+    if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal) && parseFloat(newVal) > 0) { appState.camping.target = parseFloat(newVal); saveState(); }
 }
 
 function addCampingFunds() {
     const newVal = prompt(`Add funds to the August Camping Trip ($):`);
-    if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) {
-        appState.camping.saved += parseFloat(newVal);
+    if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) { appState.camping.saved += parseFloat(newVal); saveState(); }
+}
+
+function editHitch() {
+    const newTotal = prompt("What is your expected gross earnings for this hitch? ($)", appState.hitch.total);
+    if(newTotal && !isNaN(newTotal)) {
+        appState.hitch.total = parseFloat(newTotal);
+        appState.hitch.start = new Date().toISOString().split('T')[0];
+        appState.hitch.end = new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0]; // Default 14 days
+        appState.hitch.active = true;
         saveState();
     }
 }
@@ -291,15 +282,34 @@ function generateInsights() {
     const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
     const unpaidCount = appState.bills.filter(b => !b.paid).length;
     let lowestBalanceDebt = appState.debts.length ? [...appState.debts].sort((a, b) => a.balance - b.balance)[0] : null;
-    
     let insights = [];
     const remaining = totalIncome - totalBills;
     if(remaining > 0) insights.push(`Your expected income covers all bills with <strong>${formatCurrency(remaining)}</strong> left over.`);
     if (unpaidCount > 0) insights.push(`You have <strong>${unpaidCount} bills</strong> remaining this month.`);
     else insights.push(`🎉 All bills checked off!`);
-    
     if (lowestBalanceDebt && lowestBalanceDebt.balance > 0) insights.push(`Attack <strong>${lowestBalanceDebt.name}</strong> first to build momentum (Snowball Method).`);
     return insights.map(i => `<div class="glass-panel p-3 mb-2 text-sm flex gap-3 items-start"><i data-lucide="sparkles" class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5"></i> <div>${i}</div></div>`).join('');
+}
+
+function startGrindMeter() {
+    clearInterval(liveGrindTimer);
+    liveGrindTimer = setInterval(() => {
+        const el = document.getElementById('live-grind-meter');
+        if(!el || !appState || !appState.hitch || !appState.hitch.active) return;
+        
+        const now = new Date().getTime();
+        const start = new Date(appState.hitch.start).getTime();
+        const end = new Date(appState.hitch.end).getTime();
+        
+        if(now < start) { el.innerText = formatCurrency(0); return; }
+        if(now > end) { el.innerText = formatCurrency(appState.hitch.total); return; }
+        
+        const percent = (now - start) / (end - start);
+        const earned = appState.hitch.total * percent;
+        
+        // Add pennies ticking effect
+        el.innerText = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 4 }).format(earned);
+    }, 100);
 }
 
 function renderDashboard() {
@@ -309,12 +319,29 @@ function renderDashboard() {
     let campPercent = (appState.camping.saved / appState.camping.target) * 100;
     if (campPercent > 100) campPercent = 100;
 
+    // LEAK RADAR CALCULATION
+    const expenseTotals = {};
+    appState.expenses.forEach(e => {
+        if(!expenseTotals[e.category]) expenseTotals[e.category] = 0;
+        expenseTotals[e.category] += e.amount;
+    });
+    const sortedLeaks = Object.entries(expenseTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
+
     return `
         <div id="tab-dashboard" class="tab-content active space-y-6">
-            <div class="glass-panel p-6 text-center relative overflow-hidden">
+            
+            <!-- LIVE GRIND METER -->
+            <div class="glass-panel p-6 text-center relative overflow-hidden shadow-[0_0_20px_rgba(59,130,246,0.2)] border-blue-500/30" onclick="editHitch()">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+                <div class="absolute top-2 right-3 flex items-center gap-1 opacity-50 text-[10px] uppercase font-bold"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Live Hitch</div>
+                <p class="text-xs uppercase tracking-wider opacity-70 mb-1 mt-2">Active Field Earnings</p>
+                <h2 id="live-grind-meter" class="text-4xl font-mono font-bold text-blue-400 tracking-tight">$0.0000</h2>
+                <p class="text-[10px] opacity-50 mt-2 font-mono">TARGET: ${formatCurrency(appState.hitch.total)}</p>
+            </div>
+            
+            <div class="text-center">
                 <p class="text-sm uppercase tracking-wider opacity-70 mb-1">Estimated Net Worth</p>
-                <h2 class="text-4xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(netWorth)}</h2>
+                <h2 class="text-3xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(netWorth)}</h2>
             </div>
             
             <!-- AUGUST CAMPING TRAIL -->
@@ -329,16 +356,11 @@ function renderDashboard() {
                     <span>${formatCurrency(appState.camping.target)} Goal</span>
                 </div>
                 
-                <!-- The Trail Progress Bar -->
                 <div class="relative w-full h-6 bg-black/20 dark:bg-black/40 rounded-full overflow-visible mb-6 border border-white/5 shadow-inner">
                     <div class="absolute top-0 left-0 h-full bg-green-500/80 rounded-full transition-all duration-1000 ease-out" style="width: ${campPercent}%"></div>
-                    
-                    <!-- The Red Lifted Chevy Icon -->
                     <div class="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out flex items-center justify-center bg-[#1e293b] rounded-full p-1 shadow-lg border border-gray-600" style="left: calc(${campPercent}% - 16px);">
                         <i data-lucide="truck" class="w-5 h-5 text-red-500"></i>
                     </div>
-                    
-                    <!-- Destination Icon -->
                     <div class="absolute top-1/2 -translate-y-1/2 right-1 opacity-50">
                         <i data-lucide="map-pin" class="w-4 h-4 text-white"></i>
                     </div>
@@ -349,7 +371,6 @@ function renderDashboard() {
                 </button>
             </div>
 
-            <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-lg font-bold">Accounts</h3>
@@ -367,7 +388,47 @@ function renderDashboard() {
                     `).join('')}
                 </div>
             </div>
+            
+            <!-- LEAK RADAR -->
+            ${sortedLeaks.length > 0 ? `
+            <div class="glass-panel p-4">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="radar" class="text-red-400"></i> Leak Radar</h3>
+                <div class="space-y-4">
+                    ${sortedLeaks.map((leak, idx) => {
+                        const highest = sortedLeaks[0][1];
+                        const width = (leak[1] / highest) * 100;
+                        const colorClass = idx === 0 ? 'bg-red-500' : (idx === 1 ? 'bg-orange-500' : 'bg-blue-500');
+                        return `
+                        <div>
+                            <div class="flex justify-between text-xs font-bold mb-1"><span>${leak[0]}</span><span>${formatCurrency(leak[1])}</span></div>
+                            <div class="w-full h-2 bg-black/20 dark:bg-black/40 rounded-full overflow-hidden">
+                                <div class="h-full ${colorClass} rounded-full" style="width: ${width}%"></div>
+                            </div>
+                        </div>`
+                    }).join('')}
+                </div>
+            </div>` : ''}
+            
+            <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
         </div>`;
+}
+
+// PAYDAY RUSH EXECUTION
+function executePaydayRush(period) {
+    const billsToPay = appState.bills.filter(b => b.period === period && !b.paid);
+    if(billsToPay.length === 0) return alert(`All bills for Period ${period} are already paid!`);
+    
+    const total = billsToPay.reduce((s, b) => s + b.amount, 0);
+    const mainAccount = appState.accounts.find(a => a.id === 1); // RBC Chequing
+    
+    const isSure = confirm(`EXECUTE PAYDAY RUSH - PERIOD ${period}\n\nThis will instantly deduct ${formatCurrency(total)} from your ${mainAccount.name} and check off ${billsToPay.length} bills.\n\nProceed?`);
+    
+    if(isSure) {
+        billsToPay.forEach(b => b.paid = true);
+        if(mainAccount) mainAccount.balance -= total;
+        saveState();
+        alert(`Boom! ${billsToPay.length} bills cleared. Balance updated.`);
+    }
 }
 
 function toggleBill(id) { const bill = appState.bills.find(b => b.id === id); if(bill) { bill.paid = !bill.paid; saveState(); } }
@@ -389,8 +450,7 @@ function submitBill() {
     if(name && !isNaN(amount) && amount > 0) {
         if(editingBillId) { const bill = appState.bills.find(b => b.id === editingBillId); if(bill) { bill.name = name; bill.amount = amount; bill.period = period; bill.dueDate = dueDate; } editingBillId = null; } 
         else { appState.bills.push({ id: 'b_' + Date.now(), name, amount, period, dueDate, paid: false }); }
-        saveState(); 
-        cancelEditBill();
+        saveState(); cancelEditBill();
     }
 }
 
@@ -405,6 +465,14 @@ function renderBills() {
                     <div><h2 class="text-xl font-bold text-blue-500 dark:text-blue-400">Period ${periodNum}</h2></div>
                     <div class="text-right"><p class="text-sm opacity-70">Remaining</p><p class="text-lg font-bold">${formatCurrency(remaining)}</p></div>
                 </div>
+                
+                <!-- PAYDAY RUSH BUTTON -->
+                ${remaining > 0 ? `
+                <button onclick="executePaydayRush(${periodNum})" class="w-full mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                    <i data-lucide="zap"></i> Execute Period ${periodNum} Payday
+                </button>
+                ` : ''}
+
                 <div class="space-y-3">
                     ${periodBills.map(b => `
                         <div class="flex items-center justify-between p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">
@@ -439,11 +507,9 @@ function saveExpense() {
         const hourlyRate = totalIncome / 160; 
         const hoursAdded = (amt / hourlyRate).toFixed(1);
         
-        // Populate Logan's Message
         const msgDiv = document.getElementById('logan-msg');
         msgDiv.innerHTML = `Yo! Are you sure you wanna drop <strong>${formatCurrency(amt)}</strong> right now?<br><br>That's <strong>${hoursAdded} hours</strong> of grinding out in the field. Shouldn't we be putting that cash toward the August camping trip?`;
         
-        // Show Modal
         window.pendingExpense = amt;
         document.getElementById('logan-modal').classList.remove('hidden');
     }
@@ -451,21 +517,18 @@ function saveExpense() {
 
 function confirmLogan(isSure) {
     document.getElementById('logan-modal').classList.add('hidden');
-    
     if(isSure && window.pendingExpense) {
         appState.expenses.push({ id: Date.now(), category: appState.keypadCategory, amount: window.pendingExpense, date: new Date().toISOString() });
         appState.keypadAmount = "0"; saveState();
-        
         const btn = document.getElementById('save-expense-btn'); const ogText = btn.innerHTML;
         btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved!`; btn.classList.add('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons();
         setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
     } else if (!isSure && window.pendingExpense) {
-        // Automatically move the money to the camping trip instead
         appState.camping.saved += window.pendingExpense;
         appState.keypadAmount = "0"; 
         saveState();
         document.getElementById('keypad-display').innerText = '$0';
-        switchTab('dashboard'); // Jump to dashboard to see the truck move!
+        switchTab('dashboard'); 
     }
     window.pendingExpense = null;
 }
@@ -475,17 +538,6 @@ function changeCategory(e) { appState.keypadCategory = e.target.value; }
 function renderKeypad() {
     if(!appState) return '';
     return `<div id="tab-keypad" class="tab-content flex flex-col h-[calc(100vh-140px)]"><div class="glass-panel p-4 mb-4 flex-shrink-0"><select onchange="changeCategory(event)" class="glass-input w-full text-lg font-medium text-center appearance-none mb-4">${appState.categories.map(c => `<option value="${c}" ${appState.keypadCategory === c ? 'selected' : ''}>${c}</option>`).join('')}</select><div id="keypad-display" class="text-6xl font-bold text-center tracking-tighter py-4">$${appState.keypadAmount}</div></div><div class="grid grid-cols-3 gap-3 flex-grow">${[1,2,3,4,5,6,7,8,9,'.',0,'DEL'].map(k => `<button onclick="keypadPress('${k}')" class="keypad-btn">${k === 'DEL' ? '<i data-lucide="delete"></i>' : k}</button>`).join('')}</div><div class="mt-3 flex-shrink-0"><button id="save-expense-btn" onclick="saveExpense()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition text-xl flex justify-center items-center gap-2"><i data-lucide="cloud-upload"></i> Sync Expense</button></div></div>`;
-}
-
-function calculateForecast() {
-    const target = parseFloat(document.getElementById('fc-target').value);
-    const savings = parseFloat(document.getElementById('fc-savings').value);
-    const resultDiv = document.getElementById('fc-result');
-    if(savings > 0 && target > 0) {
-        const checks = Math.ceil(target / savings);
-        resultDiv.innerHTML = `It will take <strong>${checks} consecutive paychecks</strong> to reach ${formatCurrency(target)}.`;
-        resultDiv.classList.remove('hidden');
-    }
 }
 
 function renderCalendar() {
@@ -501,15 +553,6 @@ function renderCalendar() {
     return `
     <div id="tab-calendar" class="tab-content space-y-6">
         <div class="glass-panel p-4"><div class="grid grid-cols-7 gap-2">${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}${grid}</div></div>
-        <div class="glass-panel p-4">
-            <h3 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="target"></i> Forecaster</h3>
-            <div class="space-y-3">
-                <div><label class="text-xs opacity-70 block mb-1">Target Goal Amount ($)</label><input type="number" id="fc-target" class="glass-input" value="10000"></div>
-                <div><label class="text-xs opacity-70 block mb-1">Savings Allocated per Check ($)</label><input type="number" id="fc-savings" class="glass-input" value="1200"></div>
-                <button onclick="calculateForecast()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl transition">Calculate</button>
-                <div id="fc-result" class="text-center p-3 rounded-lg bg-blue-500/20 text-blue-100 font-medium text-sm mt-4 hidden"></div>
-            </div>
-        </div>
     </div>`;
 }
 
@@ -521,38 +564,70 @@ function addNewDebt() {
     if(name && balance) { appState.debts.push({ id: 'd_' + Date.now(), name, balance, minPayment: minPayment||0, interest: interest||0 }); saveState(); }
 }
 
-function updateInvestment() {
-    const principal = parseFloat(document.getElementById('inv-principal').value), monthly = parseFloat(document.getElementById('inv-monthly').value), rate = parseFloat(document.getElementById('inv-rate').value) / 100;
-    document.getElementById('lbl-principal').innerText = formatCurrency(principal); document.getElementById('lbl-monthly').innerText = formatCurrency(monthly); document.getElementById('lbl-rate').innerText = (rate*100).toFixed(1) + '%';
-    const calc = (years) => { const n = 12, t = years, P = principal, PMT = monthly, r = rate; if (r === 0) return P + (PMT * 12 * t); const c = Math.pow(1 + r/n, n*t); return (P * c) + (PMT * ((c - 1) / (r/n))); };
-    document.getElementById('inv-5yr').innerText = formatCurrency(calc(5)); document.getElementById('inv-10yr').innerText = formatCurrency(calc(10)); document.getElementById('inv-25yr').innerText = formatCurrency(calc(25));
+// GARAGE FUNCTIONS
+function addGarageGoal() {
+    const name = prompt("Name your new project or part (e.g., Upgraded Injectors):");
+    if(!name) return;
+    const target = parseFloat(prompt("How much does it cost? ($)"));
+    if(target > 0) {
+        appState.garage.push({ id: 'g_' + Date.now(), name, target, saved: 0 });
+        saveState();
+    }
+}
+function fundGarageGoal(id) {
+    const goal = appState.garage.find(g => g.id === id);
+    if(goal) {
+        const amt = parseFloat(prompt(`Add funds to ${goal.name} (Goal: ${formatCurrency(goal.target)}):`));
+        if(amt > 0) { goal.saved += amt; saveState(); }
+    }
 }
 
 function renderWealth() {
     if(!appState) return '';
     const sortedDebts = [...appState.debts].sort((a, b) => a.balance - b.balance);
-    
     const totalDebt = appState.debts.reduce((sum, d) => sum + d.balance, 0);
     const totalIncome = appState.income.period1 + appState.income.period2;
     const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
     const remainingIncome = totalIncome - totalBills;
-    
     const suggestedPercent = 60; 
-    const suggestedMonthly = remainingIncome * (suggestedPercent / 100);
-    const suggestedCheck = suggestedMonthly / 2;
+    const suggestedCheck = (remainingIncome * (suggestedPercent / 100)) / 2;
     const checksToZero = Math.ceil(totalDebt / suggestedCheck);
 
     return `
     <div id="tab-wealth" class="tab-content space-y-6 pb-10">
         
-        <!-- SNOWBALL ATTACK PLAN -->
+        <!-- THE GARAGE: SINKING FUNDS -->
+        <div class="glass-panel p-4 border-yellow-500/30 bg-gradient-to-br from-transparent to-yellow-900/10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="wrench" class="text-yellow-500"></i> The Garage</h2>
+                <button onclick="addGarageGoal()" class="text-xs font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full"><i data-lucide="plus" class="w-3 h-3 inline"></i> New Part</button>
+            </div>
+            
+            <div class="space-y-5">
+                ${appState.garage.map(g => {
+                    let pct = (g.saved / g.target) * 100; if (pct > 100) pct = 100;
+                    return `
+                    <div class="cursor-pointer active:scale-95 transition" onclick="fundGarageGoal('${g.id}')">
+                        <div class="flex justify-between text-sm font-bold mb-1">
+                            <span>${g.name}</span>
+                            <span class="text-yellow-400">${formatCurrency(g.saved)} / ${formatCurrency(g.target)}</span>
+                        </div>
+                        <div class="relative w-full h-4 bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
+                            <div class="absolute top-0 left-0 h-full bg-yellow-500 transition-all duration-700" style="width: ${pct}%"></div>
+                            ${pct === 100 ? `<div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black uppercase tracking-widest">Ready to Order</div>` : ''}
+                        </div>
+                    </div>`
+                }).join('')}
+            </div>
+        </div>
+
         <div class="glass-panel p-4 bg-blue-500/10 border-blue-500/30">
             <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="target"></i> Snowball Attack Plan</h3>
             <div class="text-sm space-y-2">
                 <div class="flex justify-between"><span>Total Debt:</span> <strong>${formatCurrency(totalDebt)}</strong></div>
                 <div class="flex justify-between"><span>Free Income (After Bills):</span> <strong>${formatCurrency(remainingIncome)}</strong></div>
                 <hr class="border-white/10 my-3">
-                <p class="leading-relaxed opacity-90">If you use <strong>${suggestedPercent}%</strong> of your free cash (${formatCurrency(suggestedCheck)} per hitch/check) to attack the lowest balances first...</p>
+                <p class="leading-relaxed opacity-90">If you use <strong>${suggestedPercent}%</strong> of your free cash (${formatCurrency(suggestedCheck)} per check) to attack the lowest balances first...</p>
                 <div class="text-center bg-black/20 dark:bg-black/40 p-3 rounded-lg mt-3 shadow-inner">
                     <span class="text-green-500 font-bold block text-lg">Debt Free in ${checksToZero} Paychecks!</span>
                 </div>
@@ -580,21 +655,6 @@ function renderWealth() {
             </div>
             <button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button>
         </div>
-
-        <div class="glass-panel p-4">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="trending-up"></i> Investments</h2>
-            <div class="space-y-4 mb-6">
-                <div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Initial Principal</span> <strong id="lbl-principal">$10,000</strong></div><input type="range" id="inv-principal" min="0" max="100000" step="1000" value="10000" oninput="updateInvestment()"></div>
-                <div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Monthly Contribution</span> <strong id="lbl-monthly">$500</strong></div><input type="range" id="inv-monthly" min="0" max="5000" step="50" value="500" oninput="updateInvestment()"></div>
-                <div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Expected Return</span> <strong id="lbl-rate">7.0%</strong></div><input type="range" id="inv-rate" min="0" max="15" step="0.5" value="7.0" oninput="updateInvestment()"></div>
-            </div>
-            <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="glass-panel p-2"><div class="text-[10px] opacity-70">5 Years</div><div class="font-bold text-blue-400" id="inv-5yr">...</div></div>
-                <div class="glass-panel p-2"><div class="text-[10px] opacity-70">10 Years</div><div class="font-bold text-blue-400" id="inv-10yr">...</div></div>
-                <div class="glass-panel p-2 border-green-500/30"><div class="text-[10px] opacity-70 text-green-400">25 Years</div><div class="font-bold text-green-400" id="inv-25yr">...</div></div>
-            </div>
-        </div>
-        
     </div>`;
 }
 
@@ -605,10 +665,10 @@ function renderApp() {
     const activeNav = document.querySelector('.nav-btn.text-blue-500, .nav-btn.dark\\:text-blue-400, .nav-btn.scale-110');
     if(activeNav) { const tab = document.getElementById(`tab-${activeNav.dataset.target}`); if(tab) tab.classList.add('active'); }
     if(editingBillId) editBill(editingBillId);
-    if(document.getElementById('inv-principal')) updateInvestment();
+    startGrindMeter();
 }
 
-window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.calculateForecast = calculateForecast; window.addNewDebt = addNewDebt; window.updateInvestment = updateInvestment; window.editAccount = editAccount; window.updateCampingTarget = updateCampingTarget; window.addCampingFunds = addCampingFunds; window.confirmLogan = confirmLogan;
+window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.addNewDebt = addNewDebt; window.editAccount = editAccount; window.updateCampingTarget = updateCampingTarget; window.addCampingFunds = addCampingFunds; window.confirmLogan = confirmLogan; window.executePaydayRush = executePaydayRush; window.editHitch = editHitch; window.addGarageGoal = addGarageGoal; window.fundGarageGoal = fundGarageGoal;
 
 initCloudState();
 </script>
