@@ -50,6 +50,10 @@
         .dark #loading-overlay { background: var(--tw-colors-glass-dark); }
         .spinner { border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid #3b82f6; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom Logan Message Modal Styles */
+        .message-tail { position: absolute; bottom: 0; left: -8px; width: 20px; height: 20px; background-color: #26252a; border-bottom-right-radius: 16px; z-index: -1; }
+        .message-tail::after { content: ""; position: absolute; bottom: 0; left: -10px; width: 20px; height: 20px; background-color: #1c1c1e; border-bottom-right-radius: 16px; }
     </style>
 </head>
 <body class="antialiased pb-safe">
@@ -64,6 +68,33 @@
         <button onclick="window.forceStartOffline()" class="mt-8 bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-white/20 active:scale-95 transition flex items-center gap-2 cursor-pointer relative z-50">
             <i data-lucide="zap-off" class="w-4 h-4"></i> Skip & Use Offline
         </button>
+    </div>
+
+    <!-- LOGAN TEXT MESSAGE MODAL -->
+    <div id="logan-modal" class="hidden fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#1c1c1e] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
+            <!-- Contact Header -->
+            <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-gray-800">
+                <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-xl overflow-hidden shadow-inner">
+                    <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=Logan&hair=shortHairShortFlat&hairColor=2c1b18&backgroundColor=b6e3f4" alt="Logan">
+                </div>
+                <div>
+                    <div class="font-bold text-white text-sm tracking-wide">Logan</div>
+                    <div class="text-blue-500 text-[10px] font-semibold">iMessage</div>
+                </div>
+            </div>
+            <!-- Message Body -->
+            <div class="p-5 space-y-5">
+                <div class="relative bg-[#26252a] text-white p-4 rounded-2xl rounded-bl-none w-[90%] text-sm leading-relaxed shadow-md" id="logan-msg">
+                    <div class="message-tail"></div>
+                    <!-- Dynamic text loads here -->
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="confirmLogan(false)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-bold text-sm transition">Nah, save it</button>
+                    <button onclick="confirmLogan(true)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-blue-500/20">Yeah, buy it</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Header -->
@@ -131,6 +162,7 @@ const DEFAULT_DATA = {
         { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, 
         { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 } 
     ],
+    camping: { saved: 0, target: 1500 },
     goals: [], keypadAmount: "0", keypadCategory: "Convenience Grabs"
 };
 
@@ -163,7 +195,6 @@ async function initCloudState() {
         } else {
             appState = docSnap.data();
             
-            // Auto-Inject Missing Collections Data seamlessly
             if (!appState.debts.find(d => d.name.includes('ENMAX'))) {
                 appState.debts.push(
                     { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 },
@@ -173,6 +204,10 @@ async function initCloudState() {
                 );
                 await setDoc(stateDocRef, appState);
             }
+            if (!appState.camping) {
+                appState.camping = { saved: 0, target: 1500 };
+                await setDoc(stateDocRef, appState);
+            }
         }
 
         clearTimeout(networkTimeout); 
@@ -180,6 +215,7 @@ async function initCloudState() {
         onSnapshot(stateDocRef, (snapshot) => {
             if (snapshot.exists()) {
                 appState = snapshot.data();
+                if (!appState.camping) appState.camping = { saved: 0, target: 1500 };
                 renderApp();
             }
         });
@@ -233,6 +269,22 @@ function editAccount(id) {
     }
 }
 
+function updateCampingTarget() {
+    const newVal = prompt(`Set new goal amount for the August Camping Trip ($):`, appState.camping.target);
+    if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal) && parseFloat(newVal) > 0) {
+        appState.camping.target = parseFloat(newVal);
+        saveState();
+    }
+}
+
+function addCampingFunds() {
+    const newVal = prompt(`Add funds to the August Camping Trip ($):`);
+    if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) {
+        appState.camping.saved += parseFloat(newVal);
+        saveState();
+    }
+}
+
 function generateInsights() {
     if(!appState) return '';
     const totalIncome = appState.income.period1 + appState.income.period2;
@@ -253,12 +305,50 @@ function generateInsights() {
 function renderDashboard() {
     if(!appState) return '';
     const netWorth = appState.accounts.reduce((sum, a) => sum + a.balance, 0) - appState.debts.reduce((sum, d) => sum + d.balance, 0);
+    
+    let campPercent = (appState.camping.saved / appState.camping.target) * 100;
+    if (campPercent > 100) campPercent = 100;
+
     return `
         <div id="tab-dashboard" class="tab-content active space-y-6">
-            <div class="glass-panel p-6 text-center">
+            <div class="glass-panel p-6 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
                 <p class="text-sm uppercase tracking-wider opacity-70 mb-1">Estimated Net Worth</p>
                 <h2 class="text-4xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(netWorth)}</h2>
             </div>
+            
+            <!-- AUGUST CAMPING TRAIL -->
+            <div class="glass-panel p-4 border-green-500/30 bg-gradient-to-br from-transparent to-green-900/10">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-bold flex items-center gap-2"><i data-lucide="tent-tree" class="text-green-500"></i> August Camping Trip</h3>
+                    <button onclick="updateCampingTarget()" class="text-xs opacity-50 hover:opacity-100 transition"><i data-lucide="settings" class="w-4 h-4"></i></button>
+                </div>
+                
+                <div class="flex justify-between text-xs font-bold opacity-80 mb-2">
+                    <span class="text-green-400">${formatCurrency(appState.camping.saved)} Saved</span>
+                    <span>${formatCurrency(appState.camping.target)} Goal</span>
+                </div>
+                
+                <!-- The Trail Progress Bar -->
+                <div class="relative w-full h-6 bg-black/20 dark:bg-black/40 rounded-full overflow-visible mb-6 border border-white/5 shadow-inner">
+                    <div class="absolute top-0 left-0 h-full bg-green-500/80 rounded-full transition-all duration-1000 ease-out" style="width: ${campPercent}%"></div>
+                    
+                    <!-- The Red Lifted Chevy Icon -->
+                    <div class="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out flex items-center justify-center bg-[#1e293b] rounded-full p-1 shadow-lg border border-gray-600" style="left: calc(${campPercent}% - 16px);">
+                        <i data-lucide="truck" class="w-5 h-5 text-red-500"></i>
+                    </div>
+                    
+                    <!-- Destination Icon -->
+                    <div class="absolute top-1/2 -translate-y-1/2 right-1 opacity-50">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-white"></i>
+                    </div>
+                </div>
+                
+                <button onclick="addCampingFunds()" class="w-full bg-green-600/20 hover:bg-green-600/40 text-green-100 border border-green-500/30 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm shadow-sm active:scale-95">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Cash to Trail Fund
+                </button>
+            </div>
+
             <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
             <div>
                 <div class="flex justify-between items-center mb-3">
@@ -340,27 +430,46 @@ function keypadPress(val) {
     document.getElementById('keypad-display').innerText = '$' + appState.keypadAmount;
 }
 
+window.pendingExpense = null;
+
 function saveExpense() {
     const amt = parseFloat(appState.keypadAmount);
     if(amt > 0) {
-        
-        // --- EXPENSE IMPULSE CHECKER ---
         const totalIncome = appState.income.period1 + appState.income.period2;
-        const hourlyRate = totalIncome / 160; // Assuming ~160 hours worked a month
+        const hourlyRate = totalIncome / 160; 
         const hoursAdded = (amt / hourlyRate).toFixed(1);
-        const percentOfCheck = ((amt / (totalIncome / 2)) * 100).toFixed(1);
         
-        const isSure = confirm(`Hey man, are you sure you wanna buy this?\n\nThat ${formatCurrency(amt)} is gonna add ${hoursAdded} hours of grinding out in the field, or take up ${percentOfCheck}% of your whole paycheck.\n\nWorth it?`);
+        // Populate Logan's Message
+        const msgDiv = document.getElementById('logan-msg');
+        msgDiv.innerHTML = `Yo! Are you sure you wanna drop <strong>${formatCurrency(amt)}</strong> right now?<br><br>That's <strong>${hoursAdded} hours</strong> of grinding out in the field. Shouldn't we be putting that cash toward the August camping trip?`;
         
-        if(isSure) {
-            appState.expenses.push({ id: Date.now(), category: appState.keypadCategory, amount: amt, date: new Date().toISOString() });
-            appState.keypadAmount = "0"; saveState();
-            const btn = document.getElementById('save-expense-btn'); const ogText = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved!`; btn.classList.add('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons();
-            setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
-        }
+        // Show Modal
+        window.pendingExpense = amt;
+        document.getElementById('logan-modal').classList.remove('hidden');
     }
 }
+
+function confirmLogan(isSure) {
+    document.getElementById('logan-modal').classList.add('hidden');
+    
+    if(isSure && window.pendingExpense) {
+        appState.expenses.push({ id: Date.now(), category: appState.keypadCategory, amount: window.pendingExpense, date: new Date().toISOString() });
+        appState.keypadAmount = "0"; saveState();
+        
+        const btn = document.getElementById('save-expense-btn'); const ogText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved!`; btn.classList.add('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
+    } else if (!isSure && window.pendingExpense) {
+        // Automatically move the money to the camping trip instead
+        appState.camping.saved += window.pendingExpense;
+        appState.keypadAmount = "0"; 
+        saveState();
+        document.getElementById('keypad-display').innerText = '$0';
+        switchTab('dashboard'); // Jump to dashboard to see the truck move!
+    }
+    window.pendingExpense = null;
+}
+
 function changeCategory(e) { appState.keypadCategory = e.target.value; }
 
 function renderKeypad() {
@@ -421,16 +530,14 @@ function updateInvestment() {
 
 function renderWealth() {
     if(!appState) return '';
-    // SNOWBALL SORT: Lowest Balance First
     const sortedDebts = [...appState.debts].sort((a, b) => a.balance - b.balance);
     
-    // SNOWBALL CALCULATOR MATH
     const totalDebt = appState.debts.reduce((sum, d) => sum + d.balance, 0);
     const totalIncome = appState.income.period1 + appState.income.period2;
     const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
     const remainingIncome = totalIncome - totalBills;
     
-    const suggestedPercent = 60; // 60% of free cash
+    const suggestedPercent = 60; 
     const suggestedMonthly = remainingIncome * (suggestedPercent / 100);
     const suggestedCheck = suggestedMonthly / 2;
     const checksToZero = Math.ceil(totalDebt / suggestedCheck);
@@ -501,7 +608,7 @@ function renderApp() {
     if(document.getElementById('inv-principal')) updateInvestment();
 }
 
-window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.calculateForecast = calculateForecast; window.addNewDebt = addNewDebt; window.updateInvestment = updateInvestment; window.editAccount = editAccount;
+window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.calculateForecast = calculateForecast; window.addNewDebt = addNewDebt; window.updateInvestment = updateInvestment; window.editAccount = editAccount; window.updateCampingTarget = updateCampingTarget; window.addCampingFunds = addCampingFunds; window.confirmLogan = confirmLogan;
 
 initCloudState();
 </script>
