@@ -65,7 +65,6 @@
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2"></div>
 
-    <!-- INDESTRUCTIBLE LOADING OVERLAY -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <h2 class="text-xl font-bold tracking-tight">Booting Engine...</h2>
@@ -75,12 +74,11 @@
         </button>
     </div>
 
-    <!-- LOGAN TEXT MESSAGE MODAL -->
     <div id="logan-modal" class="hidden fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-[#1c1c1e] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
             <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-gray-800">
                 <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-xl overflow-hidden shadow-inner">
-                    <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=Logan&hair=shortHairShortFlat&hairColor=2c1b18&backgroundColor=b6e3f4" alt="Logan" class="w-full h-full object-cover">
+                    <img src="logan.jpg" onerror="this.src='https://api.dicebear.com/8.x/avataaars/svg?seed=Logan&hair=shortHairShortFlat&hairColor=2c1b18&backgroundColor=b6e3f4'" alt="Logan" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div class="font-bold text-white text-sm tracking-wide">Logan</div>
@@ -269,6 +267,9 @@ function switchTab(tabId) {
     document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('text-blue-500', 'dark:text-blue-400'); if(btn.dataset.target !== 'keypad') btn.classList.add('text-gray-500', 'dark:text-gray-400', 'opacity-70'); });
     const activeBtn = document.querySelector(`.nav-btn[data-target="${tabId}"]`);
     if(activeBtn && tabId !== 'keypad') { activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400', 'opacity-70'); activeBtn.classList.add('text-blue-500', 'dark:text-blue-400'); }
+    
+    // Smooth Scroll Fix: Snap to top when changing pages
+    window.scrollTo(0, 0); 
 }
 
 function editAccount(id) {
@@ -628,63 +629,4 @@ function addGarageGoal() {
 function fundGarageGoal(id) {
     const goal = appState.garage.find(g => g.id === id);
     if(goal) {
-        const amt = parseFloat(prompt(`Add funds to ${goal.name} (Goal: ${formatCurrency(goal.target)}):`));
-        if(amt > 0) { goal.saved += amt; saveState(); }
-    }
-}
-
-function renderWealth() {
-    if(!appState) return '';
-    const sortedDebts = [...appState.debts].sort((a, b) => a.balance - b.balance);
-    const totalDebt = appState.debts.reduce((sum, d) => sum + d.balance, 0);
-    const totalIncome = appState.income.period1 + appState.income.period2;
-    const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
-    const remainingIncome = totalIncome - totalBills;
-    const suggestedPercent = 60; 
-    const suggestedCheck = (remainingIncome * (suggestedPercent / 100)) / 2;
-    const checksToZero = Math.ceil(totalDebt / suggestedCheck);
-
-    return `
-    <div id="tab-wealth" class="tab-content space-y-6 pb-10">
-        <div class="glass-panel p-4 border-yellow-500/30 bg-gradient-to-br from-transparent to-yellow-900/10">
-            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="wrench" class="text-yellow-500"></i> The Garage</h2><button onclick="addGarageGoal()" class="text-xs font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full"><i data-lucide="plus" class="w-3 h-3 inline"></i> New Part</button></div>
-            <div class="space-y-5">
-                ${appState.garage.map(g => {
-                    let pct = (g.saved / g.target) * 100; if (pct > 100) pct = 100;
-                    return `<div class="cursor-pointer active:scale-95 transition" onclick="fundGarageGoal('${g.id}')"><div class="flex justify-between text-sm font-bold mb-1"><span>${g.name}</span><span class="text-yellow-400">${formatCurrency(g.saved)} / ${formatCurrency(g.target)}</span></div><div class="relative w-full h-4 bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner"><div class="absolute top-0 left-0 h-full bg-yellow-500 transition-all duration-700" style="width: ${pct}%"></div>${pct === 100 ? `<div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black uppercase tracking-widest">Ready to Order</div>` : ''}</div></div>`
-                }).join('')}
-            </div>
-        </div>
-        <div class="glass-panel p-4 bg-blue-500/10 border-blue-500/30">
-            <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="target"></i> Snowball Attack Plan</h3>
-            <div class="text-sm space-y-2"><div class="flex justify-between"><span>Total Debt:</span> <strong>${formatCurrency(totalDebt)}</strong></div><div class="flex justify-between"><span>Free Income (After Bills):</span> <strong>${formatCurrency(remainingIncome)}</strong></div><hr class="border-white/10 my-3"><p class="leading-relaxed opacity-90">If you use <strong>${suggestedPercent}%</strong> of your free cash (${formatCurrency(suggestedCheck)} per check) to attack the lowest balances first...</p><div class="text-center bg-black/20 dark:bg-black/40 p-3 rounded-lg mt-3 shadow-inner"><span class="text-green-500 font-bold block text-lg">Debt Free in ${checksToZero} Paychecks!</span></div></div>
-        </div>
-        <div class="glass-panel p-4">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="flame"></i> Active Debts</h2>
-            <div class="space-y-3 mb-6">
-                ${sortedDebts.map((d, index) => `<div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">${index === 0 ? '<div class="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-md">CURRENT TARGET</div>' : ''}<div class="flex justify-between font-bold"><span>${d.name}</span><span>${formatCurrency(d.balance)}</span></div><div class="flex justify-between text-xs opacity-70 mt-1"><span>Min: ${formatCurrency(d.minPayment)}</span><span>Rate: ${d.interest}%</span></div></div>`).join('')}
-            </div>
-            <h3 class="font-bold text-sm mb-2 mt-6 border-t pt-4">Add Debt</h3>
-            <div class="grid grid-cols-2 gap-2 mb-2"><input type="text" id="new-debt-name" placeholder="Name" class="glass-input col-span-2 text-sm"><input type="number" id="new-debt-balance" placeholder="Balance" class="glass-input text-sm"><input type="number" id="new-debt-int" placeholder="Interest %" class="glass-input text-sm"><input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm"></div><button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button>
-        </div>
-    </div>`;
-}
-
-// BIND ALL FUNCTIONS GLOBALLY SO UI BUTTONS ALWAYS WORK
-window.renderApp = function() {
-    if(!appState) return;
-    document.getElementById('app-container').innerHTML = `${renderDashboard()}${renderBills()}${renderKeypad()}${renderCalendar()}${renderWealth()}`;
-    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-    const activeNav = document.querySelector('.nav-btn.text-blue-500, .nav-btn.dark\\:text-blue-400, .nav-btn.scale-110');
-    if(activeNav) { const tab = document.getElementById(`tab-${activeNav.dataset.target}`); if(tab) tab.classList.add('active'); }
-    if(editingBillId) editBill(editingBillId);
-    startGrindMeter();
-}
-
-window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.addNewDebt = addNewDebt; window.editAccount = editAccount; window.updateCampingTarget = updateCampingTarget; window.addCampingFunds = addCampingFunds; window.confirmLogan = confirmLogan; window.executePaydayRush = executePaydayRush; window.addGarageGoal = addGarageGoal; window.fundGarageGoal = fundGarageGoal; window.updatePayConfig = updatePayConfig; window.toggleWorkDay = toggleWorkDay; window.toggleHitch = toggleHitch;
-
-// INITIATE DYNAMIC DOWNLOAD
-initCloudState();
-</script>
-</body>
-</html>
+        const amt = parseFloat(prompt(`Add funds to ${goal.name} (Goal: ${formatCurrency
