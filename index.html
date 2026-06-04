@@ -108,9 +108,9 @@
                 <span class="text-[10px] font-medium tracking-wide">Plan</span>
             </button>
 
-            <button onclick="window.switchTab('garage')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="garage">
-                <i data-lucide="car-front" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium tracking-wide">Garage</span>
+            <button onclick="window.switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="wealth">
+                <i data-lucide="landmark" class="w-6 h-6 mb-1"></i>
+                <span class="text-[10px] font-medium tracking-wide">Accounts</span>
             </button>
         </div>
     </nav>
@@ -199,7 +199,8 @@
             editId: null,
             editName: '',
             editAmount: 0,
-            editMinPayment: 0
+            editMinPayment: 0,
+            editSavedAmount: 0
         };
 
         const firebaseConfig = {
@@ -272,7 +273,17 @@
 
         const updateFirebaseState = async (newStateObj) => {
             if(dbRef && state) {
-                await setDoc(dbRef, newStateObj, { merge: true });
+                try {
+                    // 1. Optimistically update local state for an INSTANT UI response
+                    state = { ...state, ...newStateObj };
+                    triggerRender();
+                    
+                    // 2. Attempt to sync with Firebase Cloud
+                    await setDoc(dbRef, newStateObj, { merge: true });
+                } catch (error) {
+                    console.error("🔥 Firebase Save Error: Your database rules might be locked or your domain isn't authorized.", error);
+                    // The UI already updated locally, so the app will still work seamlessly for this session!
+                }
             } else {
                 state = { ...state, ...newStateObj };
                 triggerRender();
@@ -284,6 +295,20 @@
         // ----------------------------------------------------
         const triggerRender = () => {
             if (!state) return;
+            
+            // Auto-migrate new accounts & goals for existing users smoothly
+            if (state.accounts && state.accounts["Wealthsimple TFSA"] === undefined) {
+                state.accounts["Wealthsimple TFSA"] = 0;
+                state.accounts["Wealthsimple RRSP"] = 0;
+                state.accounts["NEO HISA"] = 0;
+            }
+            if (state.goals && state.goals["Emergency Fund"] === undefined) {
+                state.goals["Emergency Fund"] = { target: 15000, saved: 0 };
+            }
+            if (state.investmentContribution === undefined) {
+                state.investmentContribution = null; // null means auto-calculate from surplus
+            }
+
             const scrollPos = window.scrollY;
             const appDiv = document.getElementById('app-content');
             let html = '';
@@ -293,7 +318,7 @@
                 case 'bills': html = renderBills(); break;
                 case 'keypad': html = renderKeypad(); break;
                 case 'plan': html = renderPlan(); break;
-                case 'garage': html = renderGarage(); break;
+                case 'wealth': html = renderWealth(); break;
             }
 
             html += renderModals();
@@ -318,9 +343,13 @@
             const totalBills = calculateTotalBills();
             const surplus = netPay - totalBills;
             
-            // FIX: Safely access goals with a fallback if the data is missing from older Firebase saves
+            // Safety nets for missing data
             const camping = state.goals?.["August Camping Trip"] || { target: 1500, saved: 0 };
-            const campProgress = Math.min((camping.saved / camping.target) * 100, 100);
+            const campProgress = Math.min(((Number(camping.saved) || 0) / (Number(camping.target) || 1)) * 100, 100);
+
+            // Safe Cash Math
+            const rbcCheq = Number(state.accounts["RBC Chequing"]) || 0;
+            const neoCash = Number(state.accounts["NEO"]) || 0;
 
             return `
                 <header class="mb-8 flex justify-between items-center">
@@ -354,25 +383,25 @@
                 </section>
 
                 <div class="grid grid-cols-3 gap-3 mb-6">
-                    <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center">
-                        <p class="text-[10px] text-slate-400 mb-1 uppercase tracking-wider">Total Cash</p>
-                        <p class="text-sm font-semibold text-white truncate">
-                            ${formatMoney(state.accounts["RBC Chequing"] + state.accounts["NEO"])}
+                    <div class="glass-panel rounded-2xl p-3 flex flex-col justify-between">
+                        <p class="text-[10px] text-slate-400 mb-1 leading-tight">Total Cash</p>
+                        <p class="text-sm font-semibold text-white break-words">
+                            ${formatMoney(rbcCheq + neoCash)}
                         </p>
                     </div>
-                    <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-slate-500" onclick="window.openEdit('account', 'RBC Chequing')">
+                    <div class="glass-panel rounded-2xl p-3 flex flex-col justify-between cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-slate-500" onclick="window.openEdit('account', 'RBC Chequing')">
                         <div class="flex justify-between items-start mb-1">
-                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">RBC Cheq</p>
+                            <p class="text-[10px] text-slate-400 leading-tight">RBC Cheq</p>
                             <i data-lucide="edit-2" class="w-3 h-3 text-slate-500"></i>
                         </div>
-                        <p class="text-sm font-semibold text-blue-400 truncate">${formatMoney(state.accounts["RBC Chequing"])}</p>
+                        <p class="text-sm font-semibold text-blue-400 break-words">${formatMoney(rbcCheq)}</p>
                     </div>
-                    <div class="glass-panel rounded-2xl p-3 flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-slate-500" onclick="window.openEdit('account', 'NEO')">
+                    <div class="glass-panel rounded-2xl p-3 flex flex-col justify-between cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-slate-500" onclick="window.openEdit('account', 'NEO')">
                         <div class="flex justify-between items-start mb-1">
-                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">NEO</p>
+                            <p class="text-[10px] text-slate-400 leading-tight">NEO</p>
                             <i data-lucide="edit-2" class="w-3 h-3 text-slate-500"></i>
                         </div>
-                        <p class="text-sm font-semibold text-amber-400 truncate">${formatMoney(state.accounts["NEO"])}</p>
+                        <p class="text-sm font-semibold text-amber-400 break-words">${formatMoney(neoCash)}</p>
                     </div>
                 </div>
 
@@ -548,52 +577,151 @@
             `;
         };
 
-        const renderGarage = () => {
+        // 5. WEALTH & ACCOUNTS (Replaces Garage)
+        const renderWealth = () => {
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
-            const surplus = Math.max(0, netPay - totalBills);
+            const surplus = Math.max(0, netPay - totalBills); 
             
+            // Debt Logic
             const sortedDebts = [...state.debts].sort((a,b) => a.balance - b.balance);
             const smallestDebt = sortedDebts[0];
+            const totalDebt = state.debts.reduce((sum, d) => sum + (Number(d.balance) || 0), 0);
             
-            let payoffText = "Calculate by scheduling shifts";
-            if (surplus > 0 && smallestDebt) {
-                const monthlyAttack = smallestDebt.minPayment + surplus;
-                const months = Math.ceil(smallestDebt.balance / monthlyAttack);
-                payoffText = `<span class="text-brand-accent font-bold">${months}</span> paychecks away`;
-            }
+            // Calculate Total Cash & Investments (Safety Nets for NaN)
+            const totalAssets = Object.values(state.accounts).reduce((sum, val) => sum + (Number(val) || 0), 0);
+            const netWorth = totalAssets - totalDebt;
+            
+            // Emergency Fund Logic
+            const emerg = state.goals["Emergency Fund"] || { target: 15000, saved: 0 };
+            const emergProgress = Math.min(((Number(emerg.saved) || 0) / (Number(emerg.target) || 1)) * 100, 100);
 
-            // FIX: Safely access garage data with a fallback
-            const ford = state.garage?.["Ford 6.0L Bulletproof"] || { target: 6500, saved: 0 };
-            const fordProgress = Math.min((ford.saved / ford.target) * 100, 100);
+            // Investment Projection Calculator Logic
+            const tfsa = Number(state.accounts["Wealthsimple TFSA"]) || 0;
+            const rrsp = Number(state.accounts["Wealthsimple RRSP"]) || 0;
+            const principal = tfsa + rrsp;
+            const autoSurplus = surplus > 0 ? surplus : 0;
+            const monthlyAddition = state.investmentContribution !== null && state.investmentContribution !== undefined ? Number(state.investmentContribution) : autoSurplus;
+            const rate = 0.07; // Conservative 7% annual market return
+            
+            // Compound interest formula
+            const r_n = rate / 12;
+            const calcProj = (years) => {
+                const months = years * 12;
+                const compoundFactor = Math.pow(1 + r_n, months);
+                return (principal * compoundFactor) + (monthlyAddition * ((compoundFactor - 1) / r_n));
+            };
+
+            const proj5 = calcProj(5);
+            const proj10 = calcProj(10);
+            const proj25 = calcProj(25);
 
             return `
-                <header class="mb-6">
-                    <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Wealth & Garage</h1>
-                    <p class="text-slate-400 text-sm">Snowball debts and build the rig.</p>
+                <header class="mb-6 flex justify-between items-end">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Accounts & Wealth</h1>
+                        <p class="text-slate-400 text-sm">Net Worth: <strong class="${netWorth >= 0 ? 'text-brand-accent' : 'text-red-400'}">${formatMoney(netWorth)}</strong></p>
+                    </div>
                 </header>
 
-                <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden border-blue-500/30">
-                    <div class="absolute -right-4 -top-4 opacity-10">
-                        <i data-lucide="crosshair" class="w-32 h-32 text-blue-500"></i>
+                <!-- Investment Calculator -->
+                <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden bg-gradient-to-br from-indigo-900/40 to-slate-900/60 border-indigo-500/30">
+                    <div class="absolute -right-4 -top-4 opacity-20">
+                        <i data-lucide="trending-up" class="w-32 h-32 text-indigo-400"></i>
                     </div>
-                    <h2 class="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                        <i data-lucide="target" class="w-4 h-4"></i> Snowball Target
+                    <h2 class="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Wealth Projection
                     </h2>
-                    ${smallestDebt ? `
-                        <div class="mb-3">
-                            <p class="text-2xl font-bold text-white">${smallestDebt.name}</p>
-                            <p class="text-slate-400 text-sm">Remaining: ${formatMoney(smallestDebt.balance)}</p>
+                    
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4 max-w-[90%] relative z-10">
+                        Assuming 7% return on your TFSA/RRSP balance, investing 
+                        <span class="inline-flex items-center gap-1 bg-indigo-500/20 px-2 py-0.5 mx-0.5 rounded border border-indigo-500/30 text-indigo-300 font-semibold cursor-pointer hover:bg-indigo-500/40 transition-colors active:scale-95" onclick="window.openEdit('investment', 'Monthly Addition')">
+                            ${formatMoney(monthlyAddition)}/mo <i data-lucide="edit-2" class="w-3 h-3"></i>
+                        </span>
+                    </p>
+                    
+                    <div class="grid grid-cols-3 gap-2 relative z-10">
+                        <div class="bg-indigo-950/50 border border-indigo-500/20 rounded-2xl p-3 text-center flex flex-col justify-center">
+                            <p class="text-[10px] text-indigo-300/80 uppercase tracking-wider mb-1">5 YR</p>
+                            <p class="text-sm font-semibold text-white">${formatMoney(proj5)}</p>
                         </div>
-                        <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
-                            <p class="text-sm text-slate-300">Available Attack Surplus: <strong class="text-white">${formatMoney(surplus)}</strong></p>
-                            <p class="text-sm mt-1">Status: ${payoffText}</p>
+                        <div class="bg-indigo-900/60 border border-brand-accent/40 rounded-2xl p-3 text-center flex flex-col justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)] transform scale-105">
+                            <p class="text-[10px] text-brand-accent uppercase tracking-wider mb-1">10 YR</p>
+                            <p class="text-sm font-bold text-brand-accent">${formatMoney(proj10)}</p>
                         </div>
-                    ` : `<p class="text-slate-400">All debts clear!</p>`}
+                        <div class="bg-indigo-950/50 border border-indigo-500/20 rounded-2xl p-3 text-center flex flex-col justify-center">
+                            <p class="text-[10px] text-indigo-300/80 uppercase tracking-wider mb-1">25 YR</p>
+                            <p class="text-sm font-semibold text-white">${formatMoney(proj25)}</p>
+                        </div>
+                    </div>
                 </section>
 
+                <!-- Emergency Fund -->
+                <section class="glass-panel rounded-3xl p-6 mb-6">
+                     <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500"></i> Emergency Fund
+                    </h2>
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <p class="font-medium text-white flex items-center gap-2">
+                                3 Months Reserve
+                                <button onclick="window.openEdit('goal', 'Emergency Fund')" class="text-slate-500 hover:text-white transition-colors active:scale-95">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </p>
+                            <p class="text-xs text-slate-400">${formatMoney(Number(emerg.saved)||0)} / ${formatMoney(Number(emerg.target)||0)}</p>
+                        </div>
+                        <div class="h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-1000" style="width: ${emergProgress}%"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- All Accounts List -->
                 <section class="glass-panel rounded-3xl p-5 mb-6">
-                    <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Active Debts</h3>
+                    <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-4 h-4 text-blue-400"></i> All Accounts
+                    </h3>
+                    <div class="space-y-4">
+                        ${(() => {
+                            const primaryAccounts = ["RBC Chequing", "RBC Savings", "BMO Chequing", "BMO Savings", "Wealthsimple TFSA", "Wealthsimple RRSP", "NEO HISA", "NEO"];
+                            const allAccountKeys = Object.keys(state.accounts);
+                            
+                            // Sort logic: Named accounts first, numbered accounts bottom
+                            const extraKeys = allAccountKeys.filter(k => !primaryAccounts.includes(k));
+                            extraKeys.sort((a, b) => {
+                                const aIsNum = /^\d/.test(a); // Starts with a number
+                                const bIsNum = /^\d/.test(b);
+                                if (aIsNum && !bIsNum) return 1;  // Push numbered down
+                                if (!aIsNum && bIsNum) return -1; // Keep named on top
+                                return a.localeCompare(b);
+                            });
+
+                            const sortedAccountKeys = [
+                                ...primaryAccounts.filter(k => allAccountKeys.includes(k)),
+                                ...extraKeys
+                            ];
+                            
+                            return sortedAccountKeys.map(accName => `
+                                <div class="flex justify-between items-center group">
+                                    <p class="font-medium text-slate-200 flex items-center gap-2 truncate pr-2">
+                                        ${accName}
+                                        <button onclick="window.openEdit('account', '${accName}')" class="text-slate-500 hover:text-white transition-colors active:scale-95 flex-shrink-0">
+                                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </p>
+                                    <span class="font-semibold text-white flex-shrink-0">${formatMoney(Number(state.accounts[accName]) || 0)}</span>
+                                </div>
+                            `).join('');
+                        })()}
+                    </div>
+                </section>
+
+                <!-- Debt Snowball -->
+                <section class="glass-panel rounded-3xl p-5 mb-6">
+                    <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+                        <i data-lucide="crosshair" class="w-4 h-4 text-red-400"></i> Active Debts
+                    </h3>
                     <div class="space-y-4">
                         ${sortedDebts.map(debt => `
                             <div class="flex justify-between items-center group">
@@ -609,26 +737,6 @@
                                 <span class="font-semibold text-red-300/80">${formatMoney(debt.balance)}</span>
                             </div>
                         `).join('')}
-                    </div>
-                </section>
-
-                <section class="glass-panel rounded-3xl p-6">
-                     <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
-                        <i data-lucide="wrench" class="w-4 h-4"></i> The Garage
-                    </h2>
-                    <div>
-                        <div class="flex justify-between items-end mb-2">
-                            <p class="font-medium text-white flex items-center gap-2">
-                                Ford 6.0L Build
-                                <button onclick="window.openEdit('goal', 'Ford 6.0L Bulletproof')" class="text-slate-500 hover:text-white transition-colors active:scale-95">
-                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </p>
-                            <p class="text-xs text-slate-400">${formatMoney(ford.saved)} / ${formatMoney(ford.target)}</p>
-                        </div>
-                        <div class="h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5">
-                            <div class="h-full bg-slate-400 rounded-full transition-all duration-1000" style="width: ${fordProgress}%"></div>
-                        </div>
                     </div>
                 </section>
             `;
@@ -677,8 +785,9 @@
                 const isDebt = uiState.editType === 'debt';
                 const isGoal = uiState.editType === 'goal';
                 const isAccount = uiState.editType === 'account';
+                const isInvestment = uiState.editType === 'investment';
                 
-                const titleText = isDebt ? 'Debt' : isGoal ? 'Goal' : isAccount ? 'Account' : 'Expense / Bill';
+                const titleText = isDebt ? 'Debt' : isGoal ? 'Goal' : isAccount ? 'Account' : isInvestment ? 'Investment' : 'Expense / Bill';
                 
                 html += `
                     <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
@@ -690,15 +799,24 @@
                             <div class="space-y-4 mb-6">
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Name</label>
-                                    <input type="text" id="edit-name-input" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none font-semibold ${isAccount ? 'opacity-50 cursor-not-allowed' : ''}" value="${uiState.editName}" ${isAccount ? 'readonly' : ''}>
+                                    <input type="text" id="edit-name-input" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none font-semibold ${isAccount || isInvestment ? 'opacity-50 cursor-not-allowed' : ''}" value="${uiState.editName}" ${isAccount || isInvestment ? 'readonly' : ''}>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">${isGoal ? 'Target Amount' : isAccount ? 'Balance' : 'Amount / Balance'}</label>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">${isGoal ? 'Target Amount' : isAccount ? 'Balance' : isInvestment ? 'Monthly Contribution' : 'Amount / Balance'}</label>
                                     <div class="relative">
                                         <span class="absolute left-4 top-3 text-slate-400 font-medium">$</span>
                                         <input type="number" id="edit-amount-input" class="w-full bg-slate-800/50 text-white rounded-xl py-3 pl-8 pr-4 border border-slate-600 focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none font-semibold" value="${uiState.editAmount}" step="0.01">
                                     </div>
                                 </div>
+                                ${isGoal ? `
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider text-brand-accent">Current Saved</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-3 text-brand-accent font-medium">$</span>
+                                        <input type="number" id="edit-saved-input" class="w-full bg-slate-800/50 text-brand-accent rounded-xl py-3 pl-8 pr-4 border border-brand-accent/50 focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none font-semibold" value="${uiState.editSavedAmount}" step="0.01">
+                                    </div>
+                                </div>
+                                ` : ''}
                                 ${isDebt ? `
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Minimum Payment</label>
@@ -873,6 +991,7 @@
                 if(targetObj) {
                     uiState.editName = idOrName;
                     uiState.editAmount = targetObj.target;
+                    uiState.editSavedAmount = targetObj.saved || 0;
                 }
             } else if (type === 'account') {
                 const accVal = state.accounts[idOrName];
@@ -880,6 +999,12 @@
                     uiState.editName = idOrName;
                     uiState.editAmount = accVal;
                 }
+            } else if (type === 'investment') {
+                uiState.editName = idOrName;
+                const netPay = calculateNetPay();
+                const totalBills = calculateTotalBills();
+                const surplus = Math.max(0, netPay - totalBills);
+                uiState.editAmount = state.investmentContribution !== null && state.investmentContribution !== undefined ? state.investmentContribution : surplus;
             }
             
             uiState.showEditModal = true;
@@ -933,25 +1058,28 @@
                     );
                 }
             } else if (uiState.editType === 'goal') {
-                if (nameInput && !isNaN(amountInput)) {
-                    // Check if it's a garage item or a goal
+                const savedAmountInput = parseFloat(document.getElementById('edit-saved-input').value);
+                if (nameInput && !isNaN(amountInput) && !isNaN(savedAmountInput)) {
+                    // Check if it's an old garage item or a goal
                     if (state.garage?.[uiState.editId]) {
-                        const existingSaved = state.garage[uiState.editId].saved;
                         const newGarage = { ...state.garage };
-                        delete newGarage[uiState.editId]; // remove old key
-                        newGarage[nameInput] = { target: amountInput, saved: existingSaved };
+                        delete newGarage[uiState.editId]; 
+                        newGarage[nameInput] = { target: amountInput, saved: savedAmountInput };
                         updates.garage = newGarage;
                     } else if (state.goals?.[uiState.editId]) {
-                        const existingSaved = state.goals[uiState.editId].saved;
                         const newGoals = { ...state.goals };
                         delete newGoals[uiState.editId];
-                        newGoals[nameInput] = { target: amountInput, saved: existingSaved };
+                        newGoals[nameInput] = { target: amountInput, saved: savedAmountInput };
                         updates.goals = newGoals;
                     }
                 }
             } else if (uiState.editType === 'account') {
                 if (!isNaN(amountInput)) {
                     updates.accounts = { ...state.accounts, [uiState.editId]: amountInput };
+                }
+            } else if (uiState.editType === 'investment') {
+                if (!isNaN(amountInput)) {
+                    updates.investmentContribution = amountInput;
                 }
             }
 
