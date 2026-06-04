@@ -215,6 +215,17 @@ function switchTab(tabId) {
     if(activeBtn && tabId !== 'keypad') { activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400', 'opacity-70'); activeBtn.classList.add('text-blue-500', 'dark:text-blue-400'); }
 }
 
+function editAccount(id) {
+    const acc = appState.accounts.find(a => a.id === id);
+    if(acc) {
+        const newVal = prompt(`Update balance for ${acc.name} ($):`, acc.balance);
+        if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) {
+            acc.balance = parseFloat(newVal);
+            saveState();
+        }
+    }
+}
+
 function generateInsights() {
     if(!appState) return '';
     const totalIncome = appState.income.period1 + appState.income.period2;
@@ -240,8 +251,22 @@ function renderDashboard() {
                 <h2 class="text-4xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(netWorth)}</h2>
             </div>
             <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
-            <div><h3 class="text-lg font-bold mb-3">Accounts</h3>
-                <div class="grid grid-cols-2 gap-3">${appState.accounts.map(acc => `<div class="glass-panel p-4"><p class="text-xs opacity-70 truncate">${acc.name}</p><p class="text-lg font-bold mt-1">${formatCurrency(acc.balance)}</p></div>`).join('')}</div>
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold">Accounts</h3>
+                    <span class="text-xs opacity-50 flex items-center gap-1"><i data-lucide="edit-2" class="w-3 h-3"></i> Tap to edit</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    ${appState.accounts.map(acc => `
+                        <div class="glass-panel p-4 cursor-pointer hover:bg-white/5 transition active:scale-95" onclick="editAccount(${acc.id})">
+                            <div class="flex justify-between items-start">
+                                <p class="text-xs opacity-70 truncate pr-2">${acc.name}</p>
+                                <i data-lucide="edit-3" class="w-3 h-3 opacity-30 mt-0.5"></i>
+                            </div>
+                            <p class="text-lg font-bold mt-1">${formatCurrency(acc.balance)}</p>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>`;
 }
@@ -390,7 +415,7 @@ function renderApp() {
     if(document.getElementById('inv-principal')) updateInvestment();
 }
 
-window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.calculateForecast = calculateForecast; window.addNewDebt = addNewDebt; window.updateInvestment = updateInvestment;
+window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.calculateForecast = calculateForecast; window.addNewDebt = addNewDebt; window.updateInvestment = updateInvestment; window.editAccount = editAccount;
 
 initCloudState();
 </script>
