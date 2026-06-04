@@ -57,7 +57,6 @@
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2"></div>
 
-    <!-- Enhanced Loading Overlay -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <h2 class="text-xl font-bold tracking-tight">Syncing with Cloud...</h2>
@@ -92,7 +91,6 @@
     </nav>
 
 <script>
-// SW Cache Killer: Obliterates stuck background workers
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for(let registration of registrations) { registration.unregister(); }
@@ -128,14 +126,17 @@ const DEFAULT_DATA = {
         { id: 'b16', name: 'Rent', amount: 2400.00, period: 2, dueDate: 16, paid: false }, { id: 'b17', name: 'Utilities Water', amount: 137.00, period: 2, dueDate: 18, paid: false }, { id: 'b18', name: 'Utilities - ATCO', amount: 311.00, period: 2, dueDate: 19, paid: false }, { id: 'b19', name: 'Easy Home', amount: 150.00, period: 2, dueDate: 20, paid: false }, { id: 'b20', name: 'Truck/TD Loan', amount: 404.00, period: 2, dueDate: 22, paid: false }, { id: 'b21', name: 'Daycare - Both girls', amount: 473.00, period: 2, dueDate: 23, paid: false }, { id: 'b22', name: 'Child Support', amount: 545.50, period: 2, dueDate: 24, paid: false }, { id: 'b23', name: 'Spring Financial Loan - Austin', amount: 80.00, period: 2, dueDate: 26, paid: false }, { id: 'b24', name: 'Student Loans - Alberta', amount: 120.00, period: 2, dueDate: 28, paid: false }, { id: 'b25', name: 'Student Loans - Canada', amount: 120.00, period: 2, dueDate: 28, paid: false }
     ],
     expenses: [],
-    debts: [ { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 }, { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 } ],
+    debts: [ 
+        { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 }, 
+        { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, 
+        { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 } 
+    ],
     goals: [], keypadAmount: "0", keypadCategory: "Convenience Grabs"
 };
 
 let appState = null;
 let editingBillId = null;
 
-// Global Function Attachment
 window.forceStartOffline = function() {
     appState = DEFAULT_DATA; 
     document.getElementById('loading-overlay').style.display = 'none';
@@ -146,12 +147,7 @@ window.forceStartOffline = function() {
 
 async function initCloudState() {
     const debug = document.getElementById('debug-text');
-    
-    // Auto-Bypass if connection is blocked for more than 5 seconds
-    const networkTimeout = setTimeout(() => {
-        debug.innerText = "Network blocked by browser. Opening offline...";
-        window.forceStartOffline();
-    }, 5000);
+    const networkTimeout = setTimeout(() => { debug.innerText = "Network blocked by browser. Opening offline..."; window.forceStartOffline(); }, 5000);
 
     try {
         debug.innerText = "Step 1/3: Authenticating...";
@@ -166,9 +162,20 @@ async function initCloudState() {
             appState = DEFAULT_DATA;
         } else {
             appState = docSnap.data();
+            
+            // Auto-Inject Missing Collections Data seamlessly
+            if (!appState.debts.find(d => d.name.includes('ENMAX'))) {
+                appState.debts.push(
+                    { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 },
+                    { id: 'd5', name: 'GODAY INC (Collection)', balance: 559, minPayment: 0, interest: 0 },
+                    { id: 'd6', name: 'PRESTOCASH (Collection)', balance: 1011, minPayment: 0, interest: 0 },
+                    { id: 'd7', name: 'RIFCO AUTO (Collection)', balance: 17613, minPayment: 0, interest: 0 }
+                );
+                await setDoc(stateDocRef, appState);
+            }
         }
 
-        clearTimeout(networkTimeout); // Success! Stop the auto-bypass.
+        clearTimeout(networkTimeout); 
 
         onSnapshot(stateDocRef, (snapshot) => {
             if (snapshot.exists()) {
@@ -231,13 +238,15 @@ function generateInsights() {
     const totalIncome = appState.income.period1 + appState.income.period2;
     const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
     const unpaidCount = appState.bills.filter(b => !b.paid).length;
-    let highestInterestDebt = appState.debts.length ? appState.debts.reduce((prev, current) => (prev.interest > current.interest) ? prev : current) : null;
+    let lowestBalanceDebt = appState.debts.length ? [...appState.debts].sort((a, b) => a.balance - b.balance)[0] : null;
+    
     let insights = [];
     const remaining = totalIncome - totalBills;
     if(remaining > 0) insights.push(`Your expected income covers all bills with <strong>${formatCurrency(remaining)}</strong> left over.`);
     if (unpaidCount > 0) insights.push(`You have <strong>${unpaidCount} bills</strong> remaining this month.`);
     else insights.push(`🎉 All bills checked off!`);
-    if (highestInterestDebt && highestInterestDebt.interest > 0) insights.push(`Focus extra payments on <strong>${highestInterestDebt.name}</strong> to save interest.`);
+    
+    if (lowestBalanceDebt && lowestBalanceDebt.balance > 0) insights.push(`Attack <strong>${lowestBalanceDebt.name}</strong> first to build momentum (Snowball Method).`);
     return insights.map(i => `<div class="glass-panel p-3 mb-2 text-sm flex gap-3 items-start"><i data-lucide="sparkles" class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5"></i> <div>${i}</div></div>`).join('');
 }
 
@@ -334,11 +343,22 @@ function keypadPress(val) {
 function saveExpense() {
     const amt = parseFloat(appState.keypadAmount);
     if(amt > 0) {
-        appState.expenses.push({ id: Date.now(), category: appState.keypadCategory, amount: amt, date: new Date().toISOString() });
-        appState.keypadAmount = "0"; saveState();
-        const btn = document.getElementById('save-expense-btn'); const ogText = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved!`; btn.classList.add('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons();
-        setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
+        
+        // --- EXPENSE IMPULSE CHECKER ---
+        const totalIncome = appState.income.period1 + appState.income.period2;
+        const hourlyRate = totalIncome / 160; // Assuming ~160 hours worked a month
+        const hoursAdded = (amt / hourlyRate).toFixed(1);
+        const percentOfCheck = ((amt / (totalIncome / 2)) * 100).toFixed(1);
+        
+        const isSure = confirm(`Hey man, are you sure you wanna buy this?\n\nThat ${formatCurrency(amt)} is gonna add ${hoursAdded} hours of grinding out in the field, or take up ${percentOfCheck}% of your whole paycheck.\n\nWorth it?`);
+        
+        if(isSure) {
+            appState.expenses.push({ id: Date.now(), category: appState.keypadCategory, amount: amt, date: new Date().toISOString() });
+            appState.keypadAmount = "0"; saveState();
+            const btn = document.getElementById('save-expense-btn'); const ogText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved!`; btn.classList.add('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
+        }
     }
 }
 function changeCategory(e) { appState.keypadCategory = e.target.value; }
@@ -401,8 +421,74 @@ function updateInvestment() {
 
 function renderWealth() {
     if(!appState) return '';
-    const sortedDebts = [...appState.debts].sort((a, b) => b.interest - a.interest);
-    return `<div id="tab-wealth" class="tab-content space-y-6 pb-10"><div class="glass-panel p-4"><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="trending-up"></i> Investments</h2><div class="space-y-4 mb-6"><div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Initial Principal</span> <strong id="lbl-principal">$10,000</strong></div><input type="range" id="inv-principal" min="0" max="100000" step="1000" value="10000" oninput="updateInvestment()"></div><div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Monthly Contribution</span> <strong id="lbl-monthly">$500</strong></div><input type="range" id="inv-monthly" min="0" max="5000" step="50" value="500" oninput="updateInvestment()"></div><div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Expected Return</span> <strong id="lbl-rate">7.0%</strong></div><input type="range" id="inv-rate" min="0" max="15" step="0.5" value="7.0" oninput="updateInvestment()"></div></div><div class="grid grid-cols-3 gap-2 text-center"><div class="glass-panel p-2"><div class="text-[10px] opacity-70">5 Years</div><div class="font-bold text-blue-400" id="inv-5yr">...</div></div><div class="glass-panel p-2"><div class="text-[10px] opacity-70">10 Years</div><div class="font-bold text-blue-400" id="inv-10yr">...</div></div><div class="glass-panel p-2 border-green-500/30"><div class="text-[10px] opacity-70 text-green-400">25 Years</div><div class="font-bold text-green-400" id="inv-25yr">...</div></div></div></div><div class="glass-panel p-4"><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="flame"></i> Debt Strategy</h2><div class="space-y-3 mb-6">${sortedDebts.map((d, index) => `<div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative"><div class="flex justify-between font-bold"><span>${d.name}</span><span>${formatCurrency(d.balance)}</span></div><div class="flex justify-between text-xs opacity-70 mt-1"><span>Min: ${formatCurrency(d.minPayment)}</span><span class="${index===0?'text-red-400':''}">${d.interest}%</span></div></div>`).join('')}</div><h3 class="font-bold text-sm mb-2 mt-6 border-t pt-4">Add Debt</h3><div class="grid grid-cols-2 gap-2 mb-2"><input type="text" id="new-debt-name" placeholder="Name" class="glass-input col-span-2 text-sm"><input type="number" id="new-debt-balance" placeholder="Balance" class="glass-input text-sm"><input type="number" id="new-debt-int" placeholder="Interest %" class="glass-input text-sm"><input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm"></div><button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button></div></div>`;
+    // SNOWBALL SORT: Lowest Balance First
+    const sortedDebts = [...appState.debts].sort((a, b) => a.balance - b.balance);
+    
+    // SNOWBALL CALCULATOR MATH
+    const totalDebt = appState.debts.reduce((sum, d) => sum + d.balance, 0);
+    const totalIncome = appState.income.period1 + appState.income.period2;
+    const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
+    const remainingIncome = totalIncome - totalBills;
+    
+    const suggestedPercent = 60; // 60% of free cash
+    const suggestedMonthly = remainingIncome * (suggestedPercent / 100);
+    const suggestedCheck = suggestedMonthly / 2;
+    const checksToZero = Math.ceil(totalDebt / suggestedCheck);
+
+    return `
+    <div id="tab-wealth" class="tab-content space-y-6 pb-10">
+        
+        <!-- SNOWBALL ATTACK PLAN -->
+        <div class="glass-panel p-4 bg-blue-500/10 border-blue-500/30">
+            <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="target"></i> Snowball Attack Plan</h3>
+            <div class="text-sm space-y-2">
+                <div class="flex justify-between"><span>Total Debt:</span> <strong>${formatCurrency(totalDebt)}</strong></div>
+                <div class="flex justify-between"><span>Free Income (After Bills):</span> <strong>${formatCurrency(remainingIncome)}</strong></div>
+                <hr class="border-white/10 my-3">
+                <p class="leading-relaxed opacity-90">If you use <strong>${suggestedPercent}%</strong> of your free cash (${formatCurrency(suggestedCheck)} per hitch/check) to attack the lowest balances first...</p>
+                <div class="text-center bg-black/20 dark:bg-black/40 p-3 rounded-lg mt-3 shadow-inner">
+                    <span class="text-green-500 font-bold block text-lg">Debt Free in ${checksToZero} Paychecks!</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-4">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="flame"></i> Active Debts</h2>
+            <div class="space-y-3 mb-6">
+                ${sortedDebts.map((d, index) => `
+                    <div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
+                        ${index === 0 ? '<div class="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-md">CURRENT TARGET</div>' : ''}
+                        <div class="flex justify-between font-bold"><span>${d.name}</span><span>${formatCurrency(d.balance)}</span></div>
+                        <div class="flex justify-between text-xs opacity-70 mt-1"><span>Min: ${formatCurrency(d.minPayment)}</span><span>Rate: ${d.interest}%</span></div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <h3 class="font-bold text-sm mb-2 mt-6 border-t pt-4">Add Debt</h3>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <input type="text" id="new-debt-name" placeholder="Name" class="glass-input col-span-2 text-sm">
+                <input type="number" id="new-debt-balance" placeholder="Balance" class="glass-input text-sm">
+                <input type="number" id="new-debt-int" placeholder="Interest %" class="glass-input text-sm">
+                <input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm">
+            </div>
+            <button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button>
+        </div>
+
+        <div class="glass-panel p-4">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="trending-up"></i> Investments</h2>
+            <div class="space-y-4 mb-6">
+                <div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Initial Principal</span> <strong id="lbl-principal">$10,000</strong></div><input type="range" id="inv-principal" min="0" max="100000" step="1000" value="10000" oninput="updateInvestment()"></div>
+                <div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Monthly Contribution</span> <strong id="lbl-monthly">$500</strong></div><input type="range" id="inv-monthly" min="0" max="5000" step="50" value="500" oninput="updateInvestment()"></div>
+                <div><div class="flex justify-between text-sm mb-1"><span class="opacity-70">Expected Return</span> <strong id="lbl-rate">7.0%</strong></div><input type="range" id="inv-rate" min="0" max="15" step="0.5" value="7.0" oninput="updateInvestment()"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="glass-panel p-2"><div class="text-[10px] opacity-70">5 Years</div><div class="font-bold text-blue-400" id="inv-5yr">...</div></div>
+                <div class="glass-panel p-2"><div class="text-[10px] opacity-70">10 Years</div><div class="font-bold text-blue-400" id="inv-10yr">...</div></div>
+                <div class="glass-panel p-2 border-green-500/30"><div class="text-[10px] opacity-70 text-green-400">25 Years</div><div class="font-bold text-green-400" id="inv-25yr">...</div></div>
+            </div>
+        </div>
+        
+    </div>`;
 }
 
 function renderApp() {
