@@ -120,22 +120,15 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
+        // ----------------------------------------------------
+        // SYSTEM CONFIGURATION & DEFAULTS
+        // ----------------------------------------------------
         const DEFAULT_STATE = {
             accounts: {
-                "RBC Chequing": 2500,
-                "RBC Savings": 10000,
-                "BMO Chequing": 1200,
-                "BMO Savings": 5000,
-                "NEO": 350,
-                "Capital One": 0
+                "RBC Chequing": 2500, "RBC Savings": 10000, "BMO Chequing": 1200, 
+                "BMO Savings": 5000, "NEO": 350, "Capital One": 0
             },
-            payConfig: {
-                grossDaily: 601.87,
-                taxRate: 32.07,
-                dailyReimbursements: 85.72,
-                fixedDeductions: 132.94,
-                workDays: []
-            },
+            payConfig: { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] },
             bills: [
                 { id: "b1", name: "Internet", amount: 185.00, period: 1, paid: false },
                 { id: "b2", name: "Phone - Rogers", amount: 436.00, period: 1, paid: false },
@@ -168,6 +161,9 @@
             garage: { "Ford 6.0L Bulletproof": { target: 6500, saved: 0 } }
         };
 
+        // ----------------------------------------------------
+        // GLOBAL STATE & FIREBASE INIT 
+        // ----------------------------------------------------
         let state = null; 
         let currentTab = 'dash';
         let dbRef = null;
@@ -178,7 +174,9 @@
             pendingExpenseAmount: 0,
             expenseName: '',
             expenseDate: new Date().toISOString().split('T')[0],
-            expensePeriod: 1
+            expensePeriod: 1,
+            showEditBill: false,
+            editingBill: null
         };
 
         const firebaseConfig = {
@@ -192,13 +190,8 @@
         const db = getFirestore(app);
 
         const init = async () => {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Auth Error:", error);
-                state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-                finishLoading();
-            }
+            try { await signInAnonymously(auth); } 
+            catch (error) { state = JSON.parse(JSON.stringify(DEFAULT_STATE)); finishLoading(); }
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -216,7 +209,6 @@
                     });
                     finishLoading();
                 } catch(e) {
-                    console.error("Firestore Error:", e);
                     state = JSON.parse(JSON.stringify(DEFAULT_STATE));
                     finishLoading();
                 }
@@ -227,12 +219,12 @@
 
         const finishLoading = () => {
             document.getElementById('loader').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-                triggerRender();
-            }, 500);
+            setTimeout(() => { document.getElementById('loader').style.display = 'none'; triggerRender(); }, 500);
         };
 
+        // ----------------------------------------------------
+        // UTILITY FUNCTIONS & MATH ENGINE
+        // ----------------------------------------------------
         const formatMoney = (amount) => new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
 
         const calculateNetPay = () => {
@@ -255,6 +247,9 @@
             }
         };
 
+        // ----------------------------------------------------
+        // THE ANTI-JANK RENDER ENGINE
+        // ----------------------------------------------------
         const triggerRender = () => {
             if (!state) return;
             const scrollPos = window.scrollY;
@@ -285,11 +280,14 @@
             window.scrollTo(0, scrollPos);
         };
 
+        // ----------------------------------------------------
+        // RENDER MODULES
+        // ----------------------------------------------------
         const renderDash = () => {
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
             const surplus = netPay - totalBills;
-            const camping = state.goals["August Camping Trip"];
+            const camping = state.goals?.["August Camping Trip"] || { saved: 0, target: 1500 };
             const campProgress = Math.min((camping.saved / camping.target) * 100, 100);
 
             return `
@@ -327,12 +325,12 @@
                     <div class="glass-panel rounded-2xl p-4">
                         <p class="text-xs text-slate-400 mb-1">Total Cash</p>
                         <p class="text-xl font-semibold text-white">
-                            ${formatMoney(state.accounts["RBC Chequing"] + state.accounts["RBC Savings"] + state.accounts["BMO Chequing"] + state.accounts["BMO Savings"] + state.accounts["NEO"])}
+                            ${formatMoney((state.accounts?.["RBC Chequing"] || 0) + (state.accounts?.["RBC Savings"] || 0) + (state.accounts?.["BMO Chequing"] || 0) + (state.accounts?.["BMO Savings"] || 0) + (state.accounts?.["NEO"] || 0))}
                         </p>
                     </div>
                     <div class="glass-panel rounded-2xl p-4">
                         <p class="text-xs text-slate-400 mb-1">RBC Chequing</p>
-                        <p class="text-xl font-semibold text-blue-400">${formatMoney(state.accounts["RBC Chequing"])}</p>
+                        <p class="text-xl font-semibold text-blue-400">${formatMoney(state.accounts?.["RBC Chequing"] || 0)}</p>
                     </div>
                 </div>
 
@@ -360,7 +358,7 @@
             const period2 = state.bills.filter(b => b.period === 2);
             
             const renderBillItem = (bill) => `
-                <div class="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onclick="window.toggleBill('${bill.id}')">
+                <div class="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer group" onclick="window.toggleBill('${bill.id}')">
                     <div class="flex items-center gap-4">
                         <div class="w-6 h-6 rounded border ${bill.paid ? 'bg-brand-accent border-brand-accent text-white' : 'border-slate-500 flex items-center justify-center'} transition-colors flex-shrink-0">
                             ${bill.paid ? '<i data-lucide="check" class="w-4 h-4 mx-auto mt-1"></i>' : ''}
@@ -370,7 +368,14 @@
                             ${bill.date ? `<p class="text-xs text-slate-500">${bill.date}</p>` : ''}
                         </div>
                     </div>
-                    <span class="font-semibold ${bill.paid ? 'text-slate-500' : 'text-slate-200'}">${formatMoney(bill.amount)}</span>
+                    
+                    <div class="flex items-center gap-2 pl-2">
+                        <span class="font-semibold ${bill.paid ? 'text-slate-500' : 'text-slate-200'}">${formatMoney(bill.amount)}</span>
+                        
+                        <button onclick="event.stopPropagation(); window.openEditBill('${bill.id}');" class="p-2 text-slate-500 hover:text-white transition-colors rounded-lg hover:bg-slate-700/50">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
             `;
 
@@ -416,10 +421,10 @@
                 </header>
 
                 <div class="glass-panel rounded-3xl p-5 mb-6">
-                    <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent">
+                    <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent transition-colors">
                     <div class="flex gap-3">
-                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm" style="color-scheme: dark;">
-                        <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
+                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors text-sm" style="color-scheme: dark;">
+                        <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors text-sm">
                             <option value="1" ${uiState.expensePeriod === 1 ? 'selected' : ''}>Period 1 (1-15)</option>
                             <option value="2" ${uiState.expensePeriod === 2 ? 'selected' : ''}>Period 2 (16-31)</option>
                         </select>
@@ -514,7 +519,7 @@
                 payoffText = `<span class="text-brand-accent font-bold">${months}</span> paychecks away`;
             }
 
-            const ford = state.garage["Ford 6.0L Bulletproof"];
+            const ford = state.garage?.["Ford 6.0L Bulletproof"] || { saved: 0, target: 6500 };
             const fordProgress = Math.min((ford.saved / ford.target) * 100, 100);
 
             return `
@@ -575,39 +580,82 @@
         };
 
         const renderModals = () => {
-            if(!uiState.showRealityCheck) return '';
-            const amount = uiState.pendingExpenseAmount;
-            
-            return `
-                <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
-                    <div class="bg-[#1c1c1e] rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl transform scale-100 transition-transform duration-300 overflow-hidden">
-                        
-                        <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-slate-700/50">
-                            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">FY</div>
-                            <div>
-                                <div class="font-bold text-white text-sm tracking-wide">Future You</div>
-                                <div class="text-blue-500 text-[10px] font-semibold">iMessage</div>
-                            </div>
-                        </div>
-                        
-                        <div class="p-5 space-y-5">
-                            <div class="relative bg-[#26252a] text-white p-4 rounded-2xl rounded-bl-none w-[90%] text-sm leading-relaxed shadow-md">
-                                Hey man, I'm you from next month. Are you really about to drop <strong>${formatMoney(amount)}</strong> right now?<br><br>That money could go straight into the August Camping Trip or the 6.0L build. Do me a solid and stash it.
-                                <div class="message-tail"></div>
+            let html = '';
+
+            // 1. Reality Check Modal
+            if(uiState.showRealityCheck) {
+                const amount = uiState.pendingExpenseAmount;
+                html += `
+                    <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
+                        <div class="bg-[#1c1c1e] rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl transform scale-100 transition-transform duration-300 overflow-hidden">
+                            
+                            <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-slate-700/50">
+                                <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">FY</div>
+                                <div>
+                                    <div class="font-bold text-white text-sm tracking-wide">Future You</div>
+                                    <div class="text-blue-500 text-[10px] font-semibold">iMessage</div>
+                                </div>
                             </div>
                             
-                            <div class="space-y-3 pt-2">
-                                <button onclick="window.handleRealityCheck('save')" class="w-full py-3.5 rounded-xl bg-brand-accent text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                    <i data-lucide="tent" class="w-5 h-5"></i> Yeah, save it for Camp
+                            <div class="p-5 space-y-5">
+                                <div class="relative bg-[#26252a] text-white p-4 rounded-2xl rounded-bl-none w-[90%] text-sm leading-relaxed shadow-md">
+                                    Hey man, I'm you from next month. Are you really about to drop <strong>${formatMoney(amount)}</strong> right now?<br><br>That money could go straight into the August Camping Trip or the 6.0L build. Do me a solid and stash it.
+                                    <div class="message-tail"></div>
+                                </div>
+                                
+                                <div class="space-y-3 pt-2">
+                                    <button onclick="window.handleRealityCheck('save')" class="w-full py-3.5 rounded-xl bg-brand-accent text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                        <i data-lucide="tent" class="w-5 h-5"></i> Yeah, save it for Camp
+                                    </button>
+                                    <button onclick="window.handleRealityCheck('spend')" class="w-full py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700 active:scale-95 transition-transform">
+                                        Nah, I'm buying it
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. NEW: Edit Bill Modal
+            if(uiState.showEditBill && uiState.editingBill) {
+                html += `
+                    <div class="fixed inset-0 z-[110] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
+                        <div class="bg-[#1c1c1e] rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl p-6 relative">
+                            <h3 class="text-xl font-bold text-white mb-5 flex items-center gap-2">
+                                <i data-lucide="edit-3" class="w-5 h-5 text-brand-accent"></i> Edit Bill 
+                            </h3>
+                            
+                            <label class="block text-xs text-slate-400 mb-1 ml-1">Name</label>
+                            <input type="text" id="edit-bill-name" value="${uiState.editingBill.name}" class="w-full bg-slate-800/80 border border-white/10 rounded-xl p-3 text-white mb-4 outline-none focus:border-brand-accent transition-colors">
+                            
+                            <label class="block text-xs text-slate-400 mb-1 ml-1">Amount ($)</label>
+                            <input type="number" step="0.01" id="edit-bill-amount" value="${uiState.editingBill.amount}" class="w-full bg-slate-800/80 border border-white/10 rounded-xl p-3 text-white mb-4 outline-none focus:border-brand-accent transition-colors">
+                            
+                            <label class="block text-xs text-slate-400 mb-1 ml-1">Period</label>
+                            <select id="edit-bill-period" class="w-full bg-slate-800/80 border border-white/10 rounded-xl p-3 text-white mb-6 outline-none focus:border-brand-accent transition-colors">
+                                <option value="1" ${uiState.editingBill.period === 1 ? 'selected' : ''}>Period 1 (1st - 15th)</option>
+                                <option value="2" ${uiState.editingBill.period === 2 ? 'selected' : ''}>Period 2 (16th - 31st)</option>
+                            </select>
+
+                            <div class="flex gap-3">
+                                <button onclick="window.closeEditBill()" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700 active:scale-95 transition-transform">Cancel</button>
+                                <button onclick="window.saveBill()" class="flex-1 py-3.5 rounded-xl bg-brand-accent text-white font-bold shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2">
+                                    <i data-lucide="save" class="w-5 h-5"></i> Save
                                 </button>
-                                <button onclick="window.handleRealityCheck('spend')" class="w-full py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700 active:scale-95 transition-transform">
-                                    Nah, I'm buying it
+                            </div>
+
+                            <div class="mt-5 pt-5 border-t border-slate-700/50">
+                                <button onclick="window.deleteBill('${uiState.editingBill.id}')" class="w-full py-3 rounded-xl bg-red-500/10 text-red-400 font-semibold border border-red-500/20 active:scale-95 transition-transform flex justify-center items-center gap-2">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i> Delete Permanently
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
+
+            return html;
         };
 
         // ----------------------------------------------------
@@ -635,6 +683,44 @@
             updateFirebaseState({ bills: newBills });
         };
 
+        // --- NEW: Edit Bill Handlers ---
+        window.openEditBill = (id) => {
+            const billToEdit = state.bills.find(b => b.id === id);
+            if(billToEdit) {
+                uiState.editingBill = { ...billToEdit };
+                uiState.showEditBill = true;
+                triggerRender();
+            }
+        };
+
+        window.closeEditBill = () => {
+            uiState.showEditBill = false;
+            uiState.editingBill = null;
+            triggerRender();
+        };
+
+        window.saveBill = () => {
+            const newName = document.getElementById('edit-bill-name').value;
+            const newAmount = parseFloat(document.getElementById('edit-bill-amount').value) || 0;
+            const newPeriod = parseInt(document.getElementById('edit-bill-period').value);
+            
+            const newBills = state.bills.map(b => 
+                b.id === uiState.editingBill.id ? { ...b, name: newName, amount: newAmount, period: newPeriod } : b
+            );
+            
+            uiState.showEditBill = false;
+            uiState.editingBill = null;
+            updateFirebaseState({ bills: newBills });
+        };
+
+        window.deleteBill = (id) => {
+            const newBills = state.bills.filter(b => b.id !== id);
+            uiState.showEditBill = false;
+            uiState.editingBill = null;
+            updateFirebaseState({ bills: newBills });
+        };
+        // -------------------------------
+
         window.paydayRush = (periodNum) => {
             let deductionAmount = 0;
             const newBills = state.bills.map(b => {
@@ -644,10 +730,10 @@
                 }
                 return b;
             });
-            const newRbcBalance = state.accounts["RBC Chequing"] - deductionAmount;
+            const newRbcBalance = (state.accounts?.["RBC Chequing"] || 0) - deductionAmount;
             updateFirebaseState({
                 bills: newBills,
-                accounts: { ...state.accounts, "RBC Chequing": newRbcBalance }
+                accounts: { ...(state.accounts || {}), "RBC Chequing": newRbcBalance }
             });
         };
 
@@ -670,7 +756,6 @@
             triggerRender();
         };
 
-        // FIX: Removed the > 50 limit. Now it triggers every time!
         window.submitExpense = () => {
             const amount = parseInt(uiState.keypadValue) / 100;
             if (amount <= 0) return;
@@ -685,12 +770,15 @@
             let updates = {};
 
             if (choice === 'save') {
-                const currentSaved = state.goals["August Camping Trip"].saved;
+                // FIXED: Safety chain protects against missing folders in the database
+                const currentSaved = state.goals?.["August Camping Trip"]?.saved || 0;
+                const currentTarget = state.goals?.["August Camping Trip"]?.target || 1500;
+                
                 updates = {
-                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
+                    accounts: { ...(state.accounts || {}), "RBC Chequing": (state.accounts?.["RBC Chequing"] || 0) - amount },
                     goals: { 
-                        ...state.goals, 
-                        "August Camping Trip": { ...state.goals["August Camping Trip"], saved: currentSaved + amount } 
+                        ...(state.goals || {}), 
+                        "August Camping Trip": { target: currentTarget, saved: currentSaved + amount } 
                     }
                 };
             } else {
@@ -704,8 +792,8 @@
                 };
 
                 updates = {
-                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
-                    bills: [...state.bills, newBill]
+                    accounts: { ...(state.accounts || {}), "RBC Chequing": (state.accounts?.["RBC Chequing"] || 0) - amount },
+                    bills: [...(state.bills || []), newBill]
                 };
             }
 
