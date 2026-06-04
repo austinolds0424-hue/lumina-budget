@@ -52,6 +52,12 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .message-tail { position: absolute; bottom: 0; left: -8px; width: 20px; height: 20px; background-color: #26252a; border-bottom-right-radius: 16px; z-index: -1; }
         .message-tail::after { content: ""; position: absolute; bottom: 0; left: -10px; width: 20px; height: 20px; background-color: #1c1c1e; border-bottom-right-radius: 16px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.2); transition: .4s; border-radius: 34px; border: 1px solid rgba(255,255,255,0.3); }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3b82f6; border-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(24px); }
     </style>
 </head>
 <body class="antialiased pb-safe">
@@ -68,7 +74,6 @@
         </button>
     </div>
 
-    <!-- LOGAN TEXT MESSAGE MODAL -->
     <div id="logan-modal" class="hidden fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-[#1c1c1e] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
             <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-gray-800">
@@ -85,7 +90,7 @@
                     <div class="message-tail"></div>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button onclick="confirmLogan(false)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-bold text-sm transition">Nah, save it</button>
+                    <button onclick="confirmLogan(false)" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-bold text-sm transition shadow-inner">Nah, save it</button>
                     <button onclick="confirmLogan(true)" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-blue-500/20">Yeah, buy it</button>
                 </div>
             </div>
@@ -150,14 +155,12 @@ const DEFAULT_DATA = {
         { id: 'b16', name: 'Rent', amount: 2400.00, period: 2, dueDate: 16, paid: false }, { id: 'b17', name: 'Utilities Water', amount: 137.00, period: 2, dueDate: 18, paid: false }, { id: 'b18', name: 'Utilities - ATCO', amount: 311.00, period: 2, dueDate: 19, paid: false }, { id: 'b19', name: 'Easy Home', amount: 150.00, period: 2, dueDate: 20, paid: false }, { id: 'b20', name: 'Truck/TD Loan', amount: 404.00, period: 2, dueDate: 22, paid: false }, { id: 'b21', name: 'Daycare - Both girls', amount: 473.00, period: 2, dueDate: 23, paid: false }, { id: 'b22', name: 'Child Support', amount: 545.50, period: 2, dueDate: 24, paid: false }, { id: 'b23', name: 'Spring Financial Loan - Austin', amount: 80.00, period: 2, dueDate: 26, paid: false }, { id: 'b24', name: 'Student Loans - Alberta', amount: 120.00, period: 2, dueDate: 28, paid: false }, { id: 'b25', name: 'Student Loans - Canada', amount: 120.00, period: 2, dueDate: 28, paid: false }
     ],
     expenses: [],
-    debts: [ 
-        { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 }, 
-        { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, 
-        { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 } 
-    ],
+    debts: [ { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 }, { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 }, { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 }, { id: 'd5', name: 'GODAY INC (Collection)', balance: 559, minPayment: 0, interest: 0 }, { id: 'd6', name: 'PRESTOCASH (Collection)', balance: 1011, minPayment: 0, interest: 0 }, { id: 'd7', name: 'RIFCO AUTO (Collection)', balance: 17613, minPayment: 0, interest: 0 } ],
     camping: { saved: 0, target: 1500 },
     garage: [ { id: 'g1', name: 'Ford 6.0L Bulletproof & 500HP Build', target: 6500, saved: 0 } ],
-    hitch: { active: true, start: new Date().toISOString().split('T')[0], end: new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0], total: 16000 },
+    // DAYFORCE STUB DEFAULTS
+    payConfig: { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] },
+    hitch: { active: false, start: null, earned: 0 },
     goals: [], keypadAmount: "0", keypadCategory: "Convenience Grabs"
 };
 
@@ -186,16 +189,9 @@ async function initCloudState() {
             appState = DEFAULT_DATA;
         } else {
             appState = docSnap.data();
-            
-            // Auto-Inject Missing Features for backward compatibility
             let needsUpdate = false;
-            if (!appState.debts.find(d => d.name.includes('ENMAX'))) {
-                appState.debts.push( { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 }, { id: 'd5', name: 'GODAY INC (Collection)', balance: 559, minPayment: 0, interest: 0 }, { id: 'd6', name: 'PRESTOCASH (Collection)', balance: 1011, minPayment: 0, interest: 0 }, { id: 'd7', name: 'RIFCO AUTO (Collection)', balance: 17613, minPayment: 0, interest: 0 } );
-                needsUpdate = true;
-            }
-            if (!appState.camping) { appState.camping = { saved: 0, target: 1500 }; needsUpdate = true; }
-            if (!appState.garage) { appState.garage = [ { id: 'g1', name: 'Ford 6.0L Bulletproof & 500HP Build', target: 6500, saved: 0 } ]; needsUpdate = true; }
-            if (!appState.hitch) { appState.hitch = { active: true, start: new Date().toISOString().split('T')[0], end: new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0], total: 16000 }; needsUpdate = true; }
+            if (!appState.payConfig) { appState.payConfig = { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] }; needsUpdate = true; }
+            if (!appState.hitch || typeof appState.hitch.start === 'string') { appState.hitch = { active: false, start: null, earned: 0 }; needsUpdate = true; }
             if (needsUpdate) await setDoc(stateDocRef, appState);
         }
 
@@ -204,9 +200,8 @@ async function initCloudState() {
         onSnapshot(stateDocRef, (snapshot) => {
             if (snapshot.exists()) {
                 appState = snapshot.data();
-                if (!appState.camping) appState.camping = { saved: 0, target: 1500 };
-                if (!appState.garage) appState.garage = [];
-                if (!appState.hitch) appState.hitch = { active: false, start: '', end: '', total: 0 };
+                if (!appState.payConfig) appState.payConfig = { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] };
+                if (!appState.hitch) appState.hitch = { active: false, start: null, earned: 0 };
                 renderApp();
             }
         });
@@ -237,6 +232,7 @@ async function saveState() {
 }
 
 function formatCurrency(amount) { return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount); }
+function formatCurrencyWithCents(amount) { return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 4 }).format(amount); }
 function toggleTheme() { document.documentElement.classList.toggle('dark'); }
 
 function switchTab(tabId) {
@@ -265,15 +261,61 @@ function addCampingFunds() {
     if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) { appState.camping.saved += parseFloat(newVal); saveState(); }
 }
 
-function editHitch() {
-    const newTotal = prompt("What is your expected gross earnings for this hitch? ($)", appState.hitch.total);
-    if(newTotal && !isNaN(newTotal)) {
-        appState.hitch.total = parseFloat(newTotal);
-        appState.hitch.start = new Date().toISOString().split('T')[0];
-        appState.hitch.end = new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0]; // Default 14 days
+// THE GRIND METER ENGINE
+function calculateTotalNetHitch() {
+    // Math based on Dayforce
+    const totalDays = 16; // Standard hitch based on his 192 hours
+    const totalGross = totalDays * appState.payConfig.grossDaily;
+    const taxDeduction = totalGross * (appState.payConfig.taxRate / 100);
+    const totalReimb = totalDays * appState.payConfig.dailyReimbursements;
+    return totalGross - taxDeduction - appState.payConfig.fixedDeductions + totalReimb;
+}
+
+function toggleHitch(e) {
+    const isChecked = e.target.checked;
+    clearInterval(liveGrindTimer);
+    
+    if(isChecked) {
         appState.hitch.active = true;
+        appState.hitch.start = Date.now();
+        appState.hitch.earned = 0; 
         saveState();
+        startGrindMeter();
+    } else {
+        if(appState.hitch.start) {
+            const totalNet = calculateTotalNetHitch();
+            const totalMs = 16 * 24 * 60 * 60 * 1000; // 16 Days
+            const msPassed = Date.now() - appState.hitch.start;
+            appState.hitch.earned = (msPassed / totalMs) * totalNet;
+        }
+        appState.hitch.active = false;
+        appState.hitch.start = null;
+        saveState();
+        
+        const el = document.getElementById('live-grind-meter');
+        if(el) el.innerText = formatCurrencyWithCents(appState.hitch.earned);
     }
+}
+
+function startGrindMeter() {
+    clearInterval(liveGrindTimer);
+    if(!appState || !appState.hitch.active) {
+        const el = document.getElementById('live-grind-meter');
+        if(el) el.innerText = formatCurrencyWithCents(appState.hitch.earned || 0);
+        return;
+    }
+    
+    liveGrindTimer = setInterval(() => {
+        const el = document.getElementById('live-grind-meter');
+        if(!el) return;
+        
+        const totalNet = calculateTotalNetHitch();
+        const totalMs = 16 * 24 * 60 * 60 * 1000; // 16 Days in MS
+        const msPassed = Date.now() - appState.hitch.start;
+        
+        const earned = (msPassed / totalMs) * totalNet;
+        el.innerText = formatCurrencyWithCents(earned);
+    }, 100);
 }
 
 function generateInsights() {
@@ -291,52 +333,39 @@ function generateInsights() {
     return insights.map(i => `<div class="glass-panel p-3 mb-2 text-sm flex gap-3 items-start"><i data-lucide="sparkles" class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5"></i> <div>${i}</div></div>`).join('');
 }
 
-function startGrindMeter() {
-    clearInterval(liveGrindTimer);
-    liveGrindTimer = setInterval(() => {
-        const el = document.getElementById('live-grind-meter');
-        if(!el || !appState || !appState.hitch || !appState.hitch.active) return;
-        
-        const now = new Date().getTime();
-        const start = new Date(appState.hitch.start).getTime();
-        const end = new Date(appState.hitch.end).getTime();
-        
-        if(now < start) { el.innerText = formatCurrency(0); return; }
-        if(now > end) { el.innerText = formatCurrency(appState.hitch.total); return; }
-        
-        const percent = (now - start) / (end - start);
-        const earned = appState.hitch.total * percent;
-        
-        // Add pennies ticking effect
-        el.innerText = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 4 }).format(earned);
-    }, 100);
-}
-
 function renderDashboard() {
     if(!appState) return '';
     const netWorth = appState.accounts.reduce((sum, a) => sum + a.balance, 0) - appState.debts.reduce((sum, d) => sum + d.balance, 0);
-    
     let campPercent = (appState.camping.saved / appState.camping.target) * 100;
     if (campPercent > 100) campPercent = 100;
 
-    // LEAK RADAR CALCULATION
     const expenseTotals = {};
     appState.expenses.forEach(e => {
         if(!expenseTotals[e.category]) expenseTotals[e.category] = 0;
         expenseTotals[e.category] += e.amount;
     });
     const sortedLeaks = Object.entries(expenseTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    
+    const trueNetDaily = calculateTotalNetHitch() / 16;
 
     return `
         <div id="tab-dashboard" class="tab-content active space-y-6">
             
-            <!-- LIVE GRIND METER -->
-            <div class="glass-panel p-6 text-center relative overflow-hidden shadow-[0_0_20px_rgba(59,130,246,0.2)] border-blue-500/30" onclick="editHitch()">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
-                <div class="absolute top-2 right-3 flex items-center gap-1 opacity-50 text-[10px] uppercase font-bold"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Live Hitch</div>
-                <p class="text-xs uppercase tracking-wider opacity-70 mb-1 mt-2">Active Field Earnings</p>
-                <h2 id="live-grind-meter" class="text-4xl font-mono font-bold text-blue-400 tracking-tight">$0.0000</h2>
-                <p class="text-[10px] opacity-50 mt-2 font-mono">TARGET: ${formatCurrency(appState.hitch.total)}</p>
+            <div class="glass-panel p-6 text-center relative overflow-hidden ${appState.hitch.active ? 'shadow-[0_0_20px_rgba(59,130,246,0.2)] border-blue-500/30' : 'border-gray-500/30'}">
+                <div class="absolute top-0 left-0 w-full h-1 ${appState.hitch.active ? 'bg-gradient-to-r from-blue-400 to-purple-500' : 'bg-gray-600'}"></div>
+                
+                <div class="absolute top-2 right-3 flex items-center gap-2">
+                    <span class="text-[10px] uppercase font-bold opacity-50">${appState.hitch.active ? 'On Hitch' : 'Off Hitch'}</span>
+                    <label class="switch">
+                        <input type="checkbox" onchange="toggleHitch(event)" ${appState.hitch.active ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <p class="text-xs uppercase tracking-wider opacity-70 mb-1 mt-4">Hitch Taxi Meter</p>
+                <h2 id="live-grind-meter" class="text-4xl font-mono font-bold ${appState.hitch.active ? 'text-blue-400' : 'text-gray-400'} tracking-tight">$0.0000</h2>
+                
+                <p class="text-[10px] opacity-50 mt-2 font-mono">EARNING RATE: ${formatCurrency(trueNetDaily)} / DAY (NET)</p>
             </div>
             
             <div class="text-center">
@@ -344,7 +373,6 @@ function renderDashboard() {
                 <h2 class="text-3xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(netWorth)}</h2>
             </div>
             
-            <!-- AUGUST CAMPING TRAIL -->
             <div class="glass-panel p-4 border-green-500/30 bg-gradient-to-br from-transparent to-green-900/10">
                 <div class="flex justify-between items-start mb-4">
                     <h3 class="font-bold flex items-center gap-2"><i data-lucide="tent-tree" class="text-green-500"></i> August Camping Trip</h3>
@@ -389,7 +417,6 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- LEAK RADAR -->
             ${sortedLeaks.length > 0 ? `
             <div class="glass-panel p-4">
                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="radar" class="text-red-400"></i> Leak Radar</h3>
@@ -408,18 +435,15 @@ function renderDashboard() {
                     }).join('')}
                 </div>
             </div>` : ''}
-            
-            <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
         </div>`;
 }
 
-// PAYDAY RUSH EXECUTION
 function executePaydayRush(period) {
     const billsToPay = appState.bills.filter(b => b.period === period && !b.paid);
     if(billsToPay.length === 0) return alert(`All bills for Period ${period} are already paid!`);
     
     const total = billsToPay.reduce((s, b) => s + b.amount, 0);
-    const mainAccount = appState.accounts.find(a => a.id === 1); // RBC Chequing
+    const mainAccount = appState.accounts.find(a => a.id === 1); 
     
     const isSure = confirm(`EXECUTE PAYDAY RUSH - PERIOD ${period}\n\nThis will instantly deduct ${formatCurrency(total)} from your ${mainAccount.name} and check off ${billsToPay.length} bills.\n\nProceed?`);
     
@@ -466,7 +490,6 @@ function renderBills() {
                     <div class="text-right"><p class="text-sm opacity-70">Remaining</p><p class="text-lg font-bold">${formatCurrency(remaining)}</p></div>
                 </div>
                 
-                <!-- PAYDAY RUSH BUTTON -->
                 ${remaining > 0 ? `
                 <button onclick="executePaydayRush(${periodNum})" class="w-full mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
                     <i data-lucide="zap"></i> Execute Period ${periodNum} Payday
@@ -503,12 +526,12 @@ window.pendingExpense = null;
 function saveExpense() {
     const amt = parseFloat(appState.keypadAmount);
     if(amt > 0) {
-        const totalIncome = appState.income.period1 + appState.income.period2;
-        const hourlyRate = totalIncome / 160; 
-        const hoursAdded = (amt / hourlyRate).toFixed(1);
+        // True Net Hourly based on Dayforce stub ($7780.31 / 192 hours)
+        const netHourly = 40.52; 
+        const hoursAdded = (amt / netHourly).toFixed(1);
         
         const msgDiv = document.getElementById('logan-msg');
-        msgDiv.innerHTML = `Yo! Are you sure you wanna drop <strong>${formatCurrency(amt)}</strong> right now?<br><br>That's <strong>${hoursAdded} hours</strong> of grinding out in the field. Shouldn't we be putting that cash toward the August camping trip?`;
+        msgDiv.innerHTML = `Yo! Are you sure you wanna drop <strong>${formatCurrency(amt)}</strong> right now?<br><br>That's <strong>${hoursAdded} hours</strong> of sweating on the rig. Shouldn't we be putting that cash toward the August camping trip?`;
         
         window.pendingExpense = amt;
         document.getElementById('logan-modal').classList.remove('hidden');
@@ -540,19 +563,97 @@ function renderKeypad() {
     return `<div id="tab-keypad" class="tab-content flex flex-col h-[calc(100vh-140px)]"><div class="glass-panel p-4 mb-4 flex-shrink-0"><select onchange="changeCategory(event)" class="glass-input w-full text-lg font-medium text-center appearance-none mb-4">${appState.categories.map(c => `<option value="${c}" ${appState.keypadCategory === c ? 'selected' : ''}>${c}</option>`).join('')}</select><div id="keypad-display" class="text-6xl font-bold text-center tracking-tighter py-4">$${appState.keypadAmount}</div></div><div class="grid grid-cols-3 gap-3 flex-grow">${[1,2,3,4,5,6,7,8,9,'.',0,'DEL'].map(k => `<button onclick="keypadPress('${k}')" class="keypad-btn">${k === 'DEL' ? '<i data-lucide="delete"></i>' : k}</button>`).join('')}</div><div class="mt-3 flex-shrink-0"><button id="save-expense-btn" onclick="saveExpense()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition text-xl flex justify-center items-center gap-2"><i data-lucide="cloud-upload"></i> Sync Expense</button></div></div>`;
 }
 
+// CALENDAR & PAY STUB SIMULATOR
+function updatePayConfig(field) {
+    const el = document.getElementById(field);
+    if(el && !isNaN(el.value)) { appState.payConfig[field] = parseFloat(el.value); saveState(); }
+}
+
+function toggleWorkDay(day) {
+    if(appState.payConfig.workDays.includes(day)) {
+        appState.payConfig.workDays = appState.payConfig.workDays.filter(d => d !== day);
+    } else { appState.payConfig.workDays.push(day); }
+    saveState();
+}
+
 function renderCalendar() {
     if(!appState) return '';
-    const today = new Date(), currentYear = today.getFullYear(), currentMonth = today.getMonth(), daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate(), firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-    let grid = ''; for(let i=0; i<firstDayOfWeek; i++) grid += `<div class="aspect-square"></div>`;
+    
+    const totalDays = appState.payConfig.workDays.length;
+    const grossPay = totalDays * appState.payConfig.grossDaily;
+    const taxDeduction = grossPay * (appState.payConfig.taxRate / 100);
+    const reimbursements = totalDays * appState.payConfig.dailyReimbursements;
+    // Apply fixed deductions only if days > 0
+    const fixedDed = totalDays > 0 ? appState.payConfig.fixedDeductions : 0;
+    const netPay = grossPay - taxDeduction - fixedDed + reimbursements;
+    
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const firstDayOfWeek = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+    
+    let grid = ''; 
+    for(let i=0; i<firstDayOfWeek; i++) grid += `<div class="aspect-square"></div>`;
+    
     for(let i=1; i<=daysInMonth; i++) {
-        const isToday = i === today.getDate(), dayBills = appState.bills.filter(b => b.dueDate === i);
+        const isToday = i === today.getDate();
+        const isWorkDay = appState.payConfig.workDays.includes(i);
+        const dayBills = appState.bills.filter(b => b.dueDate === i);
+        
         let indicator = '';
-        if(dayBills.some(b => !b.paid)) indicator = `<div class="w-2 h-2 rounded-full bg-red-400 mt-1"></div>`; else if(dayBills.some(b => b.paid)) indicator = `<div class="w-2 h-2 rounded-full bg-green-500 mt-1"></div>`;
-        grid += `<div class="aspect-square glass-panel flex flex-col items-center justify-center relative cursor-pointer ${isToday ? 'ring-2 ring-blue-500 bg-blue-500/20' : ''}"><span class="text-sm font-bold">${i}</span>${indicator}</div>`;
+        if(dayBills.some(b => !b.paid)) indicator = `<div class="absolute bottom-1 w-2 h-2 rounded-full bg-red-400"></div>`; 
+        else if(dayBills.some(b => b.paid)) indicator = `<div class="absolute bottom-1 w-2 h-2 rounded-full bg-green-500"></div>`;
+        
+        grid += `
+        <div onclick="toggleWorkDay(${i})" class="aspect-square glass-panel flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-all ${isWorkDay ? 'bg-orange-500/30 border-orange-500/50 text-orange-200 shadow-inner' : ''} ${isToday ? 'ring-2 ring-blue-500' : ''}">
+            <span class="text-sm font-bold">${i}</span>
+            ${indicator}
+        </div>`;
     }
+    
     return `
     <div id="tab-calendar" class="tab-content space-y-6">
-        <div class="glass-panel p-4"><div class="grid grid-cols-7 gap-2">${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}${grid}</div></div>
+        
+        <div class="glass-panel p-4 bg-black/10">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="file-spreadsheet" class="text-blue-400"></i> Dayforce Forecaster</h2>
+            
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label class="text-xs opacity-70 block mb-1">Gross / Day ($)</label>
+                    <input type="number" id="grossDaily" class="glass-input text-sm font-bold" value="${appState.payConfig.grossDaily}" onchange="updatePayConfig('grossDaily')">
+                </div>
+                <div>
+                    <label class="text-xs opacity-70 block mb-1">Est. Tax Bracket (%)</label>
+                    <input type="number" id="taxRate" class="glass-input text-sm font-bold" value="${appState.payConfig.taxRate}" onchange="updatePayConfig('taxRate')">
+                </div>
+                <div>
+                    <label class="text-xs opacity-70 block mb-1">Per Diem / Day ($)</label>
+                    <input type="number" id="dailyReimbursements" class="glass-input text-sm font-bold" value="${appState.payConfig.dailyReimbursements}" onchange="updatePayConfig('dailyReimbursements')">
+                </div>
+                <div>
+                    <label class="text-xs opacity-70 block mb-1">Fixed Benefits ($)</label>
+                    <input type="number" id="fixedDeductions" class="glass-input text-sm font-bold" value="${appState.payConfig.fixedDeductions}" onchange="updatePayConfig('fixedDeductions')">
+                </div>
+            </div>
+            
+            <div class="bg-black/30 dark:bg-black/50 p-4 rounded-xl border border-white/5 space-y-2 font-mono text-sm">
+                <div class="flex justify-between font-bold opacity-90 border-b border-white/10 pb-2 mb-2"><span>Total Scheduled:</span> <span>${totalDays} Days</span></div>
+                <div class="flex justify-between opacity-80"><span>Earnings (Gross):</span> <span>${formatCurrency(grossPay)}</span></div>
+                <div class="flex justify-between text-red-400 opacity-80"><span>Taxes Withheld:</span> <span>-${formatCurrency(taxDeduction)}</span></div>
+                <div class="flex justify-between text-red-400 opacity-80"><span>Post-Tax Ded:</span> <span>-${formatCurrency(fixedDed)}</span></div>
+                <div class="flex justify-between text-green-400 opacity-80"><span>Reimbursements:</span> <span>+${formatCurrency(reimbursements)}</span></div>
+                <hr class="border-white/10 my-2">
+                <div class="flex justify-between text-blue-400 font-bold text-lg"><span>Net Take-Home:</span> <span>${formatCurrency(netPay)}</span></div>
+            </div>
+            
+            <p class="text-[10px] text-center text-orange-300 opacity-80 mt-3 font-bold">*Tap days on the calendar below to mark them as Hitch days.</p>
+        </div>
+
+        <div class="glass-panel p-4">
+            <div class="grid grid-cols-7 gap-2">
+                ${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}
+                ${grid}
+            </div>
+        </div>
     </div>`;
 }
 
@@ -564,16 +665,13 @@ function addNewDebt() {
     if(name && balance) { appState.debts.push({ id: 'd_' + Date.now(), name, balance, minPayment: minPayment||0, interest: interest||0 }); saveState(); }
 }
 
-// GARAGE FUNCTIONS
 function addGarageGoal() {
     const name = prompt("Name your new project or part (e.g., Upgraded Injectors):");
     if(!name) return;
     const target = parseFloat(prompt("How much does it cost? ($)"));
-    if(target > 0) {
-        appState.garage.push({ id: 'g_' + Date.now(), name, target, saved: 0 });
-        saveState();
-    }
+    if(target > 0) { appState.garage.push({ id: 'g_' + Date.now(), name, target, saved: 0 }); saveState(); }
 }
+
 function fundGarageGoal(id) {
     const goal = appState.garage.find(g => g.id === id);
     if(goal) {
@@ -596,7 +694,6 @@ function renderWealth() {
     return `
     <div id="tab-wealth" class="tab-content space-y-6 pb-10">
         
-        <!-- THE GARAGE: SINKING FUNDS -->
         <div class="glass-panel p-4 border-yellow-500/30 bg-gradient-to-br from-transparent to-yellow-900/10">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="wrench" class="text-yellow-500"></i> The Garage</h2>
@@ -649,28 +746,3 @@ function renderWealth() {
             <h3 class="font-bold text-sm mb-2 mt-6 border-t pt-4">Add Debt</h3>
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <input type="text" id="new-debt-name" placeholder="Name" class="glass-input col-span-2 text-sm">
-                <input type="number" id="new-debt-balance" placeholder="Balance" class="glass-input text-sm">
-                <input type="number" id="new-debt-int" placeholder="Interest %" class="glass-input text-sm">
-                <input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm">
-            </div>
-            <button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button>
-        </div>
-    </div>`;
-}
-
-function renderApp() {
-    if(!appState) return;
-    document.getElementById('app-container').innerHTML = `${renderDashboard()}${renderBills()}${renderKeypad()}${renderCalendar()}${renderWealth()}`;
-    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-    const activeNav = document.querySelector('.nav-btn.text-blue-500, .nav-btn.dark\\:text-blue-400, .nav-btn.scale-110');
-    if(activeNav) { const tab = document.getElementById(`tab-${activeNav.dataset.target}`); if(tab) tab.classList.add('active'); }
-    if(editingBillId) editBill(editingBillId);
-    startGrindMeter();
-}
-
-window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.addNewDebt = addNewDebt; window.editAccount = editAccount; window.updateCampingTarget = updateCampingTarget; window.addCampingFunds = addCampingFunds; window.confirmLogan = confirmLogan; window.executePaydayRush = executePaydayRush; window.editHitch = editHitch; window.addGarageGoal = addGarageGoal; window.fundGarageGoal = fundGarageGoal;
-
-initCloudState();
-</script>
-</body>
-</html>
