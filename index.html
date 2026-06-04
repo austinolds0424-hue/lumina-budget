@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     
     <script>
         tailwind.config = {
@@ -123,10 +125,6 @@
 
     <!-- Application Logic -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
         // ----------------------------------------------------
         // SYSTEM CONFIGURATION & DEFAULTS
         // ----------------------------------------------------
@@ -179,11 +177,10 @@
         };
 
         // ----------------------------------------------------
-        // GLOBAL STATE & FIREBASE INIT 
+        // GLOBAL STATE & LOCAL STORAGE INIT 
         // ----------------------------------------------------
         let state = null; 
         let currentTab = 'dash';
-        let dbRef = null;
         
         // Extended UI State for the new Expense Entry feature
         const uiState = {
@@ -203,49 +200,28 @@
             editSavedAmount: 0
         };
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8",
-            authDomain: "lumina-budget-68f2e.firebaseapp.com",
-            projectId: "lumina-budget-68f2e"
-        };
         
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        const GOOGLE_CLIENT_ID = '607768723800-v3o2gj6nj14e713rvtgab5f8viu9pb1u.apps.googleusercontent.com';
+        const STORAGE_KEY = 'lumina-finance-data';
+        const DRIVE_FILE_NAME = 'lumina-finance-backup.json';
+        const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 
-        const init = async () => {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Auth Error:", error);
-                state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-                finishLoading();
-            }
+        let tokenClient = null;
+        let googleAccessToken = null;
+        let driveFileId = localStorage.getItem('lumina-drive-file-id') || null;
+        let driveStatus = 'Google Drive not connected';
+
+        const loadLocalState = () => {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_STATE));
         };
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                dbRef = doc(db, "budgetApp", "mainState");
-                try {
-                    const docSnap = await getDoc(dbRef);
-                    if (!docSnap.exists()) await setDoc(dbRef, DEFAULT_STATE);
-                    
-                    onSnapshot(dbRef, (doc) => {
-                        if(doc.exists()) {
-                            state = doc.data();
-                            triggerRender();
-                        }
-                    });
-                    finishLoading();
-                } catch(e) {
-                    console.error("Firestore Error:", e);
-                    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-                    finishLoading();
-                }
-            }
-        });
+        const saveLocalState = () => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        };
 
-        init();
+        loadLocalState();
+
 
         const finishLoading = () => {
             document.getElementById('loader').style.opacity = '0';
@@ -254,6 +230,9 @@
                 triggerRender();
             }, 500);
         };
+
+        // Start the app from local storage instead of Firebase/Firestore
+        finishLoading();
 
         // ----------------------------------------------------
         // UTILITY FUNCTIONS & MATH ENGINE
@@ -272,21 +251,198 @@
         const calculateTotalBills = () => state ? state.bills.reduce((sum, bill) => sum + bill.amount, 0) : 0;
 
         const updateFirebaseState = async (newStateObj) => {
-            if(dbRef && state) {
-                try {
-                    // 1. Optimistically update local state for an INSTANT UI response
-                    state = { ...state, ...newStateObj };
-                    triggerRender();
-                    
-                    // 2. Attempt to sync with Firebase Cloud
-                    await setDoc(dbRef, newStateObj, { merge: true });
-                } catch (error) {
-                    console.error("🔥 Firebase Save Error: Your database rules might be locked or your domain isn't authorized.", error);
-                    // The UI already updated locally, so the app will still work seamlessly for this session!
+            state = { ...state, ...newStateObj };
+            saveLocalState();
+            triggerRender();
+        };
+
+        // ----------------------------------------------------
+        // GOOGLE DRIVE BACKUP / RESTORE
+        // ----------------------------------------------------
+        const setDriveStatus = (message) => {
+            driveStatus = message;
+            triggerRender();
+        };
+
+        const initGoogleTokenClient = () => {
+            if (tokenClient) return tokenClient;
+
+            if (!window.google?.accounts?.oauth2) {
+                throw new Error('Google Sign-In library has not loaded yet. Refresh and try again.');
+            }
+
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: DRIVE_SCOPE,
+                callback: () => {}
+            });
+
+            return tokenClient;
+        };
+
+        const ensureDriveAccess = () => new Promise((resolve, reject) => {
+            if (googleAccessToken) {
+                resolve(googleAccessToken);
+                return;
+            }
+
+            try {
+                const client = initGoogleTokenClient();
+                client.callback = (response) => {
+                    if (response.error) {
+                        reject(response);
+                        return;
+                    }
+                    googleAccessToken = response.access_token;
+                    setDriveStatus('Google Drive connected');
+                    resolve(googleAccessToken);
+                };
+                client.requestAccessToken({ prompt: 'consent' });
+            } catch (error) {
+                reject(error);
+            }
+        });
+
+        const driveFetch = async (url, options = {}) => {
+            const token = await ensureDriveAccess();
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    ...(options.headers || {})
                 }
-            } else {
-                state = { ...state, ...newStateObj };
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Google Drive error ${response.status}: ${text}`);
+            }
+
+            return response;
+        };
+
+        const findDriveBackupFile = async () => {
+            if (driveFileId) return driveFileId;
+
+            const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+            const url = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name,modifiedTime)`;
+            const response = await driveFetch(url);
+            const data = await response.json();
+
+            if (data.files && data.files.length > 0) {
+                driveFileId = data.files[0].id;
+                localStorage.setItem('lumina-drive-file-id', driveFileId);
+                return driveFileId;
+            }
+
+            return null;
+        };
+
+        const createMultipartBody = (metadata, jsonData) => {
+            const boundary = 'lumina_drive_boundary_' + Date.now();
+            const body =
+                `--${boundary}\r\n` +
+                `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+                JSON.stringify(metadata) + `\r\n` +
+                `--${boundary}\r\n` +
+                `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+                JSON.stringify(jsonData, null, 2) + `\r\n` +
+                `--${boundary}--`;
+
+            return { boundary, body };
+        };
+
+        window.connectGoogleDrive = async () => {
+            try {
+                setDriveStatus('Connecting to Google Drive...');
+                await ensureDriveAccess();
+                await findDriveBackupFile();
+                setDriveStatus(driveFileId ? 'Google Drive connected. Backup file found.' : 'Google Drive connected. No backup file yet.');
+            } catch (error) {
+                console.error(error);
+                setDriveStatus('Google Drive connection failed');
+                alert('Google Drive connection failed. Check OAuth setup and try again.');
+            }
+        };
+
+        window.backupToGoogleDrive = async () => {
+            try {
+                setDriveStatus('Backing up to Google Drive...');
+                const backupPayload = {
+                    app: 'Lumina Finance',
+                    version: 1,
+                    lastUpdated: new Date().toISOString(),
+                    state
+                };
+
+                const existingId = await findDriveBackupFile();
+                const metadata = existingId
+                    ? { name: DRIVE_FILE_NAME }
+                    : { name: DRIVE_FILE_NAME, parents: ['appDataFolder'] };
+                const { boundary, body } = createMultipartBody(metadata, backupPayload);
+
+                let url;
+                let method;
+                if (existingId) {
+                    url = `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`;
+                    method = 'PATCH';
+                } else {
+                    url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id';
+                    method = 'POST';
+                }
+
+                const response = await driveFetch(url, {
+                    method,
+                    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+                    body
+                });
+
+                const result = await response.json();
+                if (result.id) {
+                    driveFileId = result.id;
+                    localStorage.setItem('lumina-drive-file-id', driveFileId);
+                }
+
+                setDriveStatus('Backup saved to Google Drive');
+                alert('Lumina backup saved to your Google Drive.');
+            } catch (error) {
+                console.error(error);
+                setDriveStatus('Backup failed');
+                alert('Backup failed. Open the console for details or check Google Drive permissions.');
+            }
+        };
+
+        window.restoreFromGoogleDrive = async () => {
+            try {
+                const confirmed = confirm('Restore from Google Drive? This will replace the data currently stored on this device.');
+                if (!confirmed) return;
+
+                setDriveStatus('Restoring from Google Drive...');
+                const existingId = await findDriveBackupFile();
+
+                if (!existingId) {
+                    setDriveStatus('No Google Drive backup found');
+                    alert('No Lumina backup file was found in your Google Drive yet.');
+                    return;
+                }
+
+                const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${existingId}?alt=media`);
+                const backupPayload = await response.json();
+                const restoredState = backupPayload.state || backupPayload;
+
+                if (!restoredState.accounts || !restoredState.bills || !restoredState.debts) {
+                    throw new Error('Backup file does not look like valid Lumina data.');
+                }
+
+                state = restoredState;
+                saveLocalState();
+                setDriveStatus('Restored from Google Drive');
                 triggerRender();
+                alert('Lumina data restored from Google Drive.');
+            } catch (error) {
+                console.error(error);
+                setDriveStatus('Restore failed');
+                alert('Restore failed. The backup may be missing or invalid.');
             }
         };
 
@@ -361,6 +517,22 @@
                         <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
                     </div>
                 </header>
+
+                <section class="glass-panel rounded-3xl p-4 mb-6">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="cloud" class="w-4 h-4 text-blue-300"></i> Google Drive Backup
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">${driveStatus}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="window.connectGoogleDrive()" class="py-2.5 rounded-xl bg-blue-600/80 text-white text-xs font-semibold active:scale-95 transition-transform">Connect</button>
+                        <button onclick="window.backupToGoogleDrive()" class="py-2.5 rounded-xl bg-brand-accent text-white text-xs font-semibold active:scale-95 transition-transform">Backup</button>
+                        <button onclick="window.restoreFromGoogleDrive()" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold border border-white/10 active:scale-95 transition-transform">Restore</button>
+                    </div>
+                </section>
 
                 <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-brand-accent/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
