@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumina Finance</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <script>
@@ -80,10 +78,8 @@
 </head>
 <body class="text-white min-h-screen font-sans antialiased overflow-x-hidden selection:bg-brand-accent selection:text-white">
 
-    <!-- Main Content Mount -->
     <main id="app-content" class="pb-32 pt-6 px-4 max-w-lg mx-auto min-h-screen"></main>
 
-    <!-- Fixed Bottom Navigation -->
     <nav class="fixed bottom-0 w-full glass-panel border-t border-white/10 z-50 rounded-t-3xl pb-safe">
         <div class="flex justify-around items-end max-w-lg mx-auto px-2 pt-2 pb-2 relative">
             <button onclick="window.switchTab('dash')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="dash">
@@ -96,7 +92,6 @@
                 <span class="text-[10px] font-medium tracking-wide">Bills</span>
             </button>
 
-            <!-- Emphasized Keypad Button -->
             <div class="relative w-16 flex justify-center h-full">
                 <button onclick="window.switchTab('keypad')" class="absolute bottom-4 w-16 h-16 bg-brand-accent rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-[#203a43] text-white transform transition-transform active:scale-95 z-50">
                     <i data-lucide="calculator" class="w-7 h-7"></i>
@@ -115,21 +110,16 @@
         </div>
     </nav>
 
-    <!-- Global Fullscreen Loader -->
     <div id="loader" class="fixed inset-0 bg-[#0f2027] z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
         <i data-lucide="loader-2" class="w-12 h-12 text-brand-accent animate-spin mb-4"></i>
         <h1 class="text-2xl font-light tracking-widest text-white">LUMINA</h1>
     </div>
 
-    <!-- Application Logic -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        // ----------------------------------------------------
-        // SYSTEM CONFIGURATION & DEFAULTS
-        // ----------------------------------------------------
         const DEFAULT_STATE = {
             accounts: {
                 "RBC Chequing": 2500,
@@ -178,14 +168,10 @@
             garage: { "Ford 6.0L Bulletproof": { target: 6500, saved: 0 } }
         };
 
-        // ----------------------------------------------------
-        // GLOBAL STATE & FIREBASE INIT 
-        // ----------------------------------------------------
         let state = null; 
         let currentTab = 'dash';
         let dbRef = null;
         
-        // Extended UI State for the new Expense Entry feature
         const uiState = {
             keypadValue: '0',
             showRealityCheck: false,
@@ -247,9 +233,6 @@
             }, 500);
         };
 
-        // ----------------------------------------------------
-        // UTILITY FUNCTIONS & MATH ENGINE
-        // ----------------------------------------------------
         const formatMoney = (amount) => new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
 
         const calculateNetPay = () => {
@@ -272,9 +255,6 @@
             }
         };
 
-        // ----------------------------------------------------
-        // THE ANTI-JANK RENDER ENGINE
-        // ----------------------------------------------------
         const triggerRender = () => {
             if (!state) return;
             const scrollPos = window.scrollY;
@@ -305,9 +285,6 @@
             window.scrollTo(0, scrollPos);
         };
 
-        // ----------------------------------------------------
-        // RENDER MODULES
-        // ----------------------------------------------------
         const renderDash = () => {
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
@@ -438,11 +415,10 @@
                     <h1 class="text-xl font-bold tracking-tight text-white opacity-80">Expense Entry</h1>
                 </header>
 
-                <!-- New Data Inputs for the Receipt -->
                 <div class="glass-panel rounded-3xl p-5 mb-6">
                     <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent">
                     <div class="flex gap-3">
-                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
+                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm" style="color-scheme: dark;">
                         <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
                             <option value="1" ${uiState.expensePeriod === 1 ? 'selected' : ''}>Period 1 (1-15)</option>
                             <option value="2" ${uiState.expensePeriod === 2 ? 'selected' : ''}>Period 2 (16-31)</option>
@@ -675,7 +651,6 @@
             });
         };
 
-        // Update the Expense Form state dynamically
         window.updateExpData = (field, val) => {
             if(field === 'name') uiState.expenseName = val;
             if(field === 'date') uiState.expenseDate = val;
@@ -695,18 +670,14 @@
             triggerRender();
         };
 
+        // FIX: Removed the > 50 limit. Now it triggers every time!
         window.submitExpense = () => {
             const amount = parseInt(uiState.keypadValue) / 100;
             if (amount <= 0) return;
 
-            if (amount > 50) {
-                uiState.pendingExpenseAmount = amount;
-                uiState.showRealityCheck = true;
-                triggerRender();
-            } else {
-                // If it's small, skip the text message and just buy it
-                window.handleRealityCheck('spend_auto');
-            }
+            uiState.pendingExpenseAmount = amount;
+            uiState.showRealityCheck = true;
+            triggerRender();
         };
 
         window.handleRealityCheck = (choice) => {
@@ -723,13 +694,12 @@
                     }
                 };
             } else {
-                // Spend it - Deduct from RBC AND add to the Bills list as a receipt!
                 const newBill = {
                     id: 'exp_' + Date.now(),
                     name: uiState.expenseName || 'Ad-hoc Expense',
                     amount: amount,
                     period: uiState.expensePeriod,
-                    paid: true, // Mark it as already paid so it doesn't add to unpaid totals
+                    paid: true, 
                     date: uiState.expenseDate
                 };
 
@@ -739,12 +709,11 @@
                 };
             }
 
-            // Reset UI
             uiState.showRealityCheck = false;
             uiState.pendingExpenseAmount = 0;
             uiState.keypadValue = '0';
             uiState.expenseName = ''; 
-            currentTab = 'bills'; // Jump to bills to show them the receipt
+            currentTab = 'bills'; 
             
             updateFirebaseState(updates);
         };
