@@ -9,215 +9,62 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        glass: {
-                            light: 'rgba(255, 255, 255, 0.4)',
-                            dark: 'rgba(30, 41, 59, 0.6)',
-                        },
-                        glassBorder: {
-                            light: 'rgba(255, 255, 255, 0.5)',
-                            dark: 'rgba(255, 255, 255, 0.1)',
-                        }
-                    }
-                }
-            }
+            theme: { extend: { colors: { glass: { light: 'rgba(255, 255, 255, 0.4)', dark: 'rgba(30, 41, 59, 0.6)' }, glassBorder: { light: 'rgba(255, 255, 255, 0.5)', dark: 'rgba(255, 255, 255, 0.1)' } } } }
         }
     </script>
     <style>
-        :root {
-            --bg-gradient-light: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-            --bg-gradient-dark: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-        }
-
-        body {
-            background: var(--bg-gradient-light);
-            background-attachment: fixed;
-            min-height: 100vh;
-            transition: background 0.5s ease;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: #1f2937;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .dark body {
-            background: var(--bg-gradient-dark);
-            color: #f8fafc;
-        }
-
-        /* Abstract Background Shapes for better Glassmorphism */
-        .bg-shape {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            opacity: 0.6;
-            animation: float 20s infinite ease-in-out alternate;
-        }
+        :root { --bg-gradient-light: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); --bg-gradient-dark: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); }
+        body { background: var(--bg-gradient-light); background-attachment: fixed; min-height: 100vh; transition: background 0.5s ease; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .dark body { background: var(--bg-gradient-dark); color: #f8fafc; }
+        .bg-shape { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.6; animation: float 20s infinite ease-in-out alternate; }
         .shape1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ff9a9e; }
         .shape2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #a18cd1; }
-        .dark .shape1 { background: #1a2a6c; }
-        .dark .shape2 { background: #b21f1f; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(50px, 50px) scale(1.1); }
-        }
-
-        /* Glassmorphism Classes */
-        .glass-panel {
-            background: var(--tw-colors-glass-light);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--tw-colors-glassBorder-light);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            border-radius: 1.5rem;
-        }
-        .dark .glass-panel {
-            background: var(--tw-colors-glass-dark);
-            border: 1px solid var(--tw-colors-glassBorder-dark);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .glass-input {
-            background: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 0.75rem;
-            padding: 0.75rem;
-            width: 100%;
-            outline: none;
-            transition: all 0.2s;
-            color: inherit;
-        }
-        .dark .glass-input {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-        .dark .glass-input option {
-            background: #1e293b;
-            color: white;
-        }
-        .glass-input:focus {
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
-        }
-
-        /* Checkbox styling */
-        .checkbox-wrapper {
-            position: relative;
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            flex-shrink: 0;
-        }
-        .checkbox-wrapper input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .checkmark {
-            position: absolute;
-            top: 0; left: 0; height: 24px; width: 24px;
-            background-color: rgba(255, 255, 255, 0.5);
-            border: 2px solid rgba(0,0,0,0.2);
-            border-radius: 6px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
+        .dark .shape1 { background: #1a2a6c; } .dark .shape2 { background: #b21f1f; }
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
+        .glass-panel { background: var(--tw-colors-glass-light); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--tw-colors-glassBorder-light); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); border-radius: 1.5rem; }
+        .dark .glass-panel { background: var(--tw-colors-glass-dark); border: 1px solid var(--tw-colors-glassBorder-dark); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        .glass-input { background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 0.75rem; padding: 0.75rem; width: 100%; outline: none; transition: all 0.2s; color: inherit; }
+        .dark .glass-input { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); color: white; }
+        .dark .glass-input option { background: #1e293b; color: white; }
+        .glass-input:focus { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2); }
+        .checkbox-wrapper { position: relative; display: inline-block; width: 24px; height: 24px; flex-shrink: 0; }
+        .checkbox-wrapper input { opacity: 0; width: 0; height: 0; }
+        .checkmark { position: absolute; top: 0; left: 0; height: 24px; width: 24px; background-color: rgba(255, 255, 255, 0.5); border: 2px solid rgba(0,0,0,0.2); border-radius: 6px; transition: all 0.2s; cursor: pointer; }
         .dark .checkmark { background-color: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.3); }
-        .checkbox-wrapper input:checked ~ .checkmark {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-        }
-        .checkmark:after {
-            content: ""; position: absolute; display: none;
-            left: 7px; top: 3px; width: 6px; height: 12px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-        }
+        .checkbox-wrapper input:checked ~ .checkmark { background-color: #3b82f6; border-color: #3b82f6; }
+        .checkmark:after { content: ""; position: absolute; display: none; left: 7px; top: 3px; width: 6px; height: 12px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
         .checkbox-wrapper input:checked ~ .checkmark:after { display: block; }
-
-        /* Keypad Styling */
-        .keypad-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 1rem;
-            font-size: 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.1s;
-            user-select: none;
-        }
-        .dark .keypad-btn {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-        .keypad-btn:active {
-            transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.4);
-        }
+        .keypad-btn { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 1rem; font-size: 1.5rem; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.1s; user-select: none; }
+        .dark .keypad-btn { background: rgba(0, 0, 0, 0.3); border-color: rgba(255, 255, 255, 0.1); }
+        .keypad-btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.4); }
         .dark .keypad-btn:active { background: rgba(255, 255, 255, 0.2); }
-
-        /* Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none; width: 100%; background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 20px; width: 20px;
-            border-radius: 50%; background: #3b82f6; cursor: pointer;
-            margin-top: -8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 6px; cursor: pointer;
-            background: rgba(0,0,0,0.1); border-radius: 3px;
-        }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: rgba(0,0,0,0.1); border-radius: 3px; }
         .dark input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.2); }
-
-        /* Hide scrollbar for clean UI */
-        ::-webkit-scrollbar { display: none; }
-        * { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
-        .tab-content.active { display: block; }
+        ::-webkit-scrollbar { display: none; } * { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; } .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Bottom Nav Safe Area for Samsung Gestures */
-        .pb-safe { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 20px)); }
-        .nav-safe { margin-bottom: env(safe-area-inset-bottom, 10px); }
-
-        /* Full Screen Loading Overlay */
-        #loading-overlay {
-            position: fixed; inset: 0; z-index: 100;
-            background: var(--tw-colors-glass-light);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
+        .pb-safe { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 20px)); } .nav-safe { margin-bottom: env(safe-area-inset-bottom, 10px); }
+        #loading-overlay { position: fixed; inset: 0; z-index: 1000; background: var(--tw-colors-glass-light); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .dark #loading-overlay { background: var(--tw-colors-glass-dark); }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3); border-radius: 50%;
-            border-top: 4px solid #3b82f6; width: 40px; height: 40px;
-            animation: spin 1s linear infinite; margin-bottom: 1rem;
-        }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid #3b82f6; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="antialiased pb-safe">
 
-    <!-- Abstract Background -->
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2"></div>
 
-    <!-- Loading Overlay -->
+    <!-- Enhanced Loading Overlay with Escape Hatch -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <h2 class="text-xl font-bold tracking-tight">Syncing with Cloud...</h2>
+        <p id="debug-text" class="text-xs text-blue-400 mt-3 font-mono font-bold tracking-wider uppercase">Loading Core Engine...</p>
+        <button onclick="forceStartOffline()" class="mt-8 bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl text-sm font-bold active:scale-95 transition flex items-center gap-2">
+            <i data-lucide="zap-off" class="w-4 h-4"></i> Skip & Use Offline
+        </button>
     </div>
 
     <!-- Header -->
@@ -225,7 +72,7 @@
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">L</div>
             <h1 class="text-xl font-bold tracking-tight">Lumina</h1>
-            <div id="cloud-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-2" title="Cloud Synced"></div>
+            <div id="cloud-status" class="w-2 h-2 rounded-full bg-yellow-400 ml-2" title="Cloud Status"></div>
         </div>
         <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition">
             <i data-lucide="moon" class="w-6 h-6 dark:hidden"></i>
@@ -233,81 +80,32 @@
         </button>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="p-4" id="app-container">
-        <!-- Rendered via JS -->
-    </main>
+    <main class="p-4" id="app-container"></main>
 
     <!-- Bottom Navigation -->
     <nav class="glass-panel fixed bottom-0 left-0 right-0 mx-4 nav-safe p-2 z-50 flex justify-between px-4 pb-2">
-        <button onclick="switchTab('dashboard')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all active" data-target="dashboard">
-            <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
-            <span class="text-xs font-medium">Dash</span>
-        </button>
-        <button onclick="switchTab('bills')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="bills">
-            <i data-lucide="receipt" class="w-6 h-6 mb-1"></i>
-            <span class="text-xs font-medium">Bills</span>
-        </button>
-        <button onclick="switchTab('keypad')" class="nav-btn flex flex-col items-center p-2 text-blue-500 dark:text-blue-400 scale-110 -translate-y-2 glass-panel transition-all" style="border-radius: 50%; width: 56px; height: 56px; justify-content: center; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" data-target="keypad">
-            <i data-lucide="plus" class="w-8 h-8"></i>
-        </button>
-        <button onclick="switchTab('calendar')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="calendar">
-            <i data-lucide="calendar" class="w-6 h-6 mb-1"></i>
-            <span class="text-xs font-medium">Plan</span>
-        </button>
-        <button onclick="switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="wealth">
-            <i data-lucide="trending-up" class="w-6 h-6 mb-1"></i>
-            <span class="text-xs font-medium">Wealth</span>
-        </button>
+        <button onclick="switchTab('dashboard')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all active" data-target="dashboard"><i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Dash</span></button>
+        <button onclick="switchTab('bills')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="bills"><i data-lucide="receipt" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Bills</span></button>
+        <button onclick="switchTab('keypad')" class="nav-btn flex flex-col items-center p-2 text-blue-500 dark:text-blue-400 scale-110 -translate-y-2 glass-panel transition-all" style="border-radius: 50%; width: 56px; height: 56px; justify-content: center; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" data-target="keypad"><i data-lucide="plus" class="w-8 h-8"></i></button>
+        <button onclick="switchTab('calendar')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="calendar"><i data-lucide="calendar" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Plan</span></button>
+        <button onclick="switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 opacity-70 hover:opacity-100 transition-all" data-target="wealth"><i data-lucide="trending-up" class="w-6 h-6 mb-1"></i><span class="text-xs font-medium">Wealth</span></button>
     </nav>
 
-<!-- Standard PWA Script Block -->
 <script>
-(function setupPWA() {
-    const manifest = {
-        name: "Lumina Personal Finance",
-        short_name: "Lumina",
-        description: "Premium personal finance, offline ready.",
-        start_url: "./?source=pwa",
-        id: "lumina-finance-app",
-        display: "standalone",
-        background_color: "#0f2027",
-        theme_color: "#1e293b",
-        orientation: "portrait-primary",
-        icons: [{ src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzNiODJmNiIvPjx0ZXh0IHg9IjUwIiB5PSI2NCIgZm9udC1zaXplPSI1MCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPkw8L3RleHQ+PC9zdmc+", sizes: "192x192", type: "image/svg+xml" }]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-    const manifestUrl = URL.createObjectURL(manifestBlob);
-    const link = document.createElement('link');
-    link.rel = 'manifest'; link.href = manifestUrl;
-    document.head.appendChild(link);
-
-    const swCode = `
-        self.addEventListener('install', (e) => self.skipWaiting());
-        self.addEventListener('activate', (e) => self.clients.claim());
-        self.addEventListener('fetch', (e) => {
-            e.respondWith(
-                fetch(e.request).catch(() => new Response('App Offline Mode Active', { headers: { 'Content-Type': 'text/plain' } }))
-            );
-        });
-    `;
-    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(swBlob);
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(swUrl).catch(console.error);
-    }
-})();
+// SW Cache Killer: Obliterates stuck background workers
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) { registration.unregister(); }
+    });
+}
 </script>
 
-<!-- Firebase Module Application Script -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+// Rock-solid proven Firebase Version
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
-/**
- * FIREBASE INITIALIZATION
- */
 const firebaseConfig = {
     apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8",
     authDomain: "lumina-budget-68f2e.firebaseapp.com",
@@ -320,273 +118,134 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const stateDocRef = doc(db, "budgetApp", "mainState");
 
 const DEFAULT_DATA = {
-    accounts: [
-        { id: 1, name: 'RBC Chequing', balance: 2500 },
-        { id: 2, name: 'RBC Savings', balance: 10000 },
-        { id: 3, name: 'BMO Chequing', balance: 1200 },
-        { id: 4, name: 'BMO Savings', balance: 5000 },
-        { id: 5, name: 'NEO', balance: 350 },
-        { id: 6, name: 'Capital One', balance: 0 }
-    ],
+    accounts: [ { id: 1, name: 'RBC Chequing', balance: 2500 }, { id: 2, name: 'RBC Savings', balance: 10000 }, { id: 3, name: 'BMO Chequing', balance: 1200 }, { id: 4, name: 'BMO Savings', balance: 5000 }, { id: 5, name: 'NEO', balance: 350 }, { id: 6, name: 'Capital One', balance: 0 } ],
     categories: ['Austin - Work', 'Bills', 'Convenience Grabs', 'Credit Card', 'Eating Out', 'Fun Money', 'Gas/Auto', 'Gifts', 'Groceries', 'House', 'Kids', 'Medical', 'Other', 'Personal Care', 'Travel', 'Unexpected Bill'],
     income: { period1: 6562.33, period2: 5500.00 },
     bills: [
-        { id: 'b1', name: 'Internet', amount: 185.00, period: 1, dueDate: 2, paid: false },
-        { id: 'b2', name: 'Phone - Rogers', amount: 436.00, period: 1, dueDate: 4, paid: false },
-        { id: 'b3', name: 'Easy Home', amount: 150.00, period: 1, dueDate: 5, paid: false },
-        { id: 'b4', name: 'Truck/TD Loan', amount: 404.00, period: 1, dueDate: 6, paid: false },
-        { id: 'b5', name: 'Auto Insurance - Wawanesa', amount: 520.00, period: 1, dueDate: 7, paid: false },
-        { id: 'b6', name: 'Child Support', amount: 545.50, period: 1, dueDate: 8, paid: false },
-        { id: 'b7', name: 'House Insurance - Apollo', amount: 38.00, period: 1, dueDate: 8, paid: false },
-        { id: 'b8', name: 'Counseling - Justine', amount: 220.00, period: 1, dueDate: 10, paid: false },
-        { id: 'b9', name: 'Credit Card Payment - Justine', amount: 100.00, period: 1, dueDate: 11, paid: false },
-        { id: 'b10', name: 'Credit Card Payment - Austin', amount: 100.00, period: 1, dueDate: 11, paid: false },
-        { id: 'b11', name: 'Spring Financial Loan - Austin', amount: 80.00, period: 1, dueDate: 12, paid: false },
-        { id: 'b12', name: 'Subscription - Netflix', amount: 19.94, period: 1, dueDate: 14, paid: false },
-        { id: 'b13', name: 'Subscription - Spotify Duo', amount: 18.78, period: 1, dueDate: 14, paid: false },
-        { id: 'b14', name: 'Subscription - Disney+', amount: 18.84, period: 1, dueDate: 15, paid: false },
-        { id: 'b15', name: 'Subscription - Paramount+', amount: 12.59, period: 1, dueDate: 15, paid: false },
-        { id: 'b16', name: 'Rent', amount: 2400.00, period: 2, dueDate: 16, paid: false },
-        { id: 'b17', name: 'Utilities Water', amount: 137.00, period: 2, dueDate: 18, paid: false },
-        { id: 'b18', name: 'Utilities - ATCO', amount: 311.00, period: 2, dueDate: 19, paid: false },
-        { id: 'b19', name: 'Easy Home', amount: 150.00, period: 2, dueDate: 20, paid: false },
-        { id: 'b20', name: 'Truck/TD Loan', amount: 404.00, period: 2, dueDate: 22, paid: false },
-        { id: 'b21', name: 'Daycare - Both girls', amount: 473.00, period: 2, dueDate: 23, paid: false },
-        { id: 'b22', name: 'Child Support', amount: 545.50, period: 2, dueDate: 24, paid: false },
-        { id: 'b23', name: 'Spring Financial Loan - Austin', amount: 80.00, period: 2, dueDate: 26, paid: false },
-        { id: 'b24', name: 'Student Loans - Alberta', amount: 120.00, period: 2, dueDate: 28, paid: false },
-        { id: 'b25', name: 'Student Loans - Canada', amount: 120.00, period: 2, dueDate: 28, paid: false }
+        { id: 'b1', name: 'Internet', amount: 185.00, period: 1, dueDate: 2, paid: false }, { id: 'b2', name: 'Phone - Rogers', amount: 436.00, period: 1, dueDate: 4, paid: false }, { id: 'b3', name: 'Easy Home', amount: 150.00, period: 1, dueDate: 5, paid: false }, { id: 'b4', name: 'Truck/TD Loan', amount: 404.00, period: 1, dueDate: 6, paid: false }, { id: 'b5', name: 'Auto Insurance - Wawanesa', amount: 520.00, period: 1, dueDate: 7, paid: false }, { id: 'b6', name: 'Child Support', amount: 545.50, period: 1, dueDate: 8, paid: false }, { id: 'b7', name: 'House Insurance - Apollo', amount: 38.00, period: 1, dueDate: 8, paid: false }, { id: 'b8', name: 'Counseling - Justine', amount: 220.00, period: 1, dueDate: 10, paid: false }, { id: 'b9', name: 'Credit Card Payment - Justine', amount: 100.00, period: 1, dueDate: 11, paid: false }, { id: 'b10', name: 'Credit Card Payment - Austin', amount: 100.00, period: 1, dueDate: 11, paid: false }, { id: 'b11', name: 'Spring Financial Loan - Austin', amount: 80.00, period: 1, dueDate: 12, paid: false }, { id: 'b12', name: 'Subscription - Netflix', amount: 19.94, period: 1, dueDate: 14, paid: false }, { id: 'b13', name: 'Subscription - Spotify Duo', amount: 18.78, period: 1, dueDate: 14, paid: false }, { id: 'b14', name: 'Subscription - Disney+', amount: 18.84, period: 1, dueDate: 15, paid: false }, { id: 'b15', name: 'Subscription - Paramount+', amount: 12.59, period: 1, dueDate: 15, paid: false },
+        { id: 'b16', name: 'Rent', amount: 2400.00, period: 2, dueDate: 16, paid: false }, { id: 'b17', name: 'Utilities Water', amount: 137.00, period: 2, dueDate: 18, paid: false }, { id: 'b18', name: 'Utilities - ATCO', amount: 311.00, period: 2, dueDate: 19, paid: false }, { id: 'b19', name: 'Easy Home', amount: 150.00, period: 2, dueDate: 20, paid: false }, { id: 'b20', name: 'Truck/TD Loan', amount: 404.00, period: 2, dueDate: 22, paid: false }, { id: 'b21', name: 'Daycare - Both girls', amount: 473.00, period: 2, dueDate: 23, paid: false }, { id: 'b22', name: 'Child Support', amount: 545.50, period: 2, dueDate: 24, paid: false }, { id: 'b23', name: 'Spring Financial Loan - Austin', amount: 80.00, period: 2, dueDate: 26, paid: false }, { id: 'b24', name: 'Student Loans - Alberta', amount: 120.00, period: 2, dueDate: 28, paid: false }, { id: 'b25', name: 'Student Loans - Canada', amount: 120.00, period: 2, dueDate: 28, paid: false }
     ],
     expenses: [],
-    debts: [
-        { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 },
-        { id: 'd2', name: 'Spring Financial - Austin', balance: 3000, minPayment: 160, interest: 12.0 },
-        { id: 'd3', name: 'Student Loans (AB+CAN)', balance: 15000, minPayment: 240, interest: 0 }
-    ],
-    goals: [],
-    keypadAmount: "0",
-    keypadCategory: "Convenience Grabs"
+    debts: [ { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 }, { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 } ],
+    goals: [], keypadAmount: "0", keypadCategory: "Convenience Grabs"
 };
 
 let appState = null;
 let editingBillId = null; 
-const stateDocRef = doc(db, "budgetApp", "mainState");
 
-// Initialize Cloud Connection
 async function initCloudState() {
+    const debug = document.getElementById('debug-text');
     try {
+        debug.innerText = "Step 1/3: Authenticating...";
         await signInAnonymously(auth);
         
-        // Check if doc exists first
+        debug.innerText = "Step 2/3: Checking Cloud Data...";
         const docSnap = await getDoc(stateDocRef);
+        
+        debug.innerText = "Step 3/3: Syncing interface...";
         if (!docSnap.exists()) {
-            console.log("No existing cloud data found. Initializing DEFAULT_DATA...");
             await setDoc(stateDocRef, DEFAULT_DATA);
             appState = DEFAULT_DATA;
         } else {
             appState = docSnap.data();
         }
 
-        // Setup Real-time Listener
         onSnapshot(stateDocRef, (snapshot) => {
             if (snapshot.exists()) {
                 appState = snapshot.data();
                 renderApp();
             }
-        }, (error) => {
-            console.error("Firebase Sync Error: ", error);
         });
 
-        // Hide loader, start app
         document.getElementById('loading-overlay').classList.add('hidden');
+        document.getElementById('cloud-status').classList.add('bg-green-500', 'animate-pulse');
         renderApp();
         
     } catch (error) {
-        console.error("Error connecting to Firebase:", error);
-        document.getElementById('loading-overlay').innerHTML = `
-            <div class="glass-panel p-6 text-center text-red-500">
-                <i data-lucide="wifi-off" class="w-12 h-12 mx-auto mb-2"></i>
-                <p class="font-bold">Cloud Connection Failed</p>
-                <p class="text-xs mt-2">${error.message}</p>
-            </div>
-        `;
-        lucide.createIcons();
+        console.error(error);
+        debug.innerText = "Error: " + error.message;
+        document.getElementById('cloud-status').classList.add('bg-red-500');
     }
 }
 
-// Global Save Function -> Pushes to Firebase
 async function saveState() {
-    // Optimistic UI update instantly
     renderApp(); 
-    document.getElementById('cloud-status').classList.remove('bg-green-500', 'animate-pulse');
+    document.getElementById('cloud-status').classList.remove('bg-green-500', 'animate-pulse', 'bg-red-500');
     document.getElementById('cloud-status').classList.add('bg-yellow-400');
-    
     try {
         await setDoc(stateDocRef, appState);
-        // Success indicator
         document.getElementById('cloud-status').classList.remove('bg-yellow-400');
         document.getElementById('cloud-status').classList.add('bg-green-500', 'animate-pulse');
     } catch (error) {
-        console.error("Failed to push state to cloud:", error);
         document.getElementById('cloud-status').classList.remove('bg-yellow-400');
         document.getElementById('cloud-status').classList.add('bg-red-500');
     }
 }
 
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
-}
-
-/**
- * THEME & NAVIGATION
- */
-function toggleTheme() {
-    document.documentElement.classList.toggle('dark');
-}
+function formatCurrency(amount) { return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount); }
+function toggleTheme() { document.documentElement.classList.toggle('dark'); }
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.getElementById(`tab-${tabId}`).classList.add('active');
-    
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('text-blue-500', 'dark:text-blue-400');
-        if(btn.dataset.target !== 'keypad') {
-            btn.classList.add('text-gray-500', 'dark:text-gray-400', 'opacity-70');
-        }
-    });
-
+    document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('text-blue-500', 'dark:text-blue-400'); if(btn.dataset.target !== 'keypad') btn.classList.add('text-gray-500', 'dark:text-gray-400', 'opacity-70'); });
     const activeBtn = document.querySelector(`.nav-btn[data-target="${tabId}"]`);
-    if(activeBtn && tabId !== 'keypad') {
-        activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400', 'opacity-70');
-        activeBtn.classList.add('text-blue-500', 'dark:text-blue-400');
-    }
+    if(activeBtn && tabId !== 'keypad') { activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400', 'opacity-70'); activeBtn.classList.add('text-blue-500', 'dark:text-blue-400'); }
 }
 
-/**
- * AI INSIGHTS GENERATOR
- */
 function generateInsights() {
     if(!appState) return '';
     const totalIncome = appState.income.period1 + appState.income.period2;
     const totalBills = appState.bills.reduce((sum, b) => sum + b.amount, 0);
     const unpaidCount = appState.bills.filter(b => !b.paid).length;
     let highestInterestDebt = appState.debts.length ? appState.debts.reduce((prev, current) => (prev.interest > current.interest) ? prev : current) : null;
-    
     let insights = [];
     const remaining = totalIncome - totalBills;
-    if(remaining > 0) insights.push(`Your expected income covers all bills with <strong>${formatCurrency(remaining)}</strong> left over for goals and expenses.`);
-    if (unpaidCount > 0) insights.push(`You currently have <strong>${unpaidCount} bills</strong> remaining to be checked off this month.`);
-    else insights.push(`🎉 All bills are checked off for this month! Great job.`);
-    if (highestInterestDebt && highestInterestDebt.interest > 0) insights.push(`Putting an extra $200 towards <strong>${highestInterestDebt.name}</strong> saves the most interest (Avalanche method).`);
-
+    if(remaining > 0) insights.push(`Your expected income covers all bills with <strong>${formatCurrency(remaining)}</strong> left over.`);
+    if (unpaidCount > 0) insights.push(`You have <strong>${unpaidCount} bills</strong> remaining this month.`);
+    else insights.push(`🎉 All bills checked off!`);
+    if (highestInterestDebt && highestInterestDebt.interest > 0) insights.push(`Focus extra payments on <strong>${highestInterestDebt.name}</strong> to save interest.`);
     return insights.map(i => `<div class="glass-panel p-3 mb-2 text-sm flex gap-3 items-start"><i data-lucide="sparkles" class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5"></i> <div>${i}</div></div>`).join('');
 }
 
-/**
- * DASHBOARD
- */
 function renderDashboard() {
     if(!appState) return '';
     const netWorth = appState.accounts.reduce((sum, a) => sum + a.balance, 0) - appState.debts.reduce((sum, d) => sum + d.balance, 0);
-    
     return `
         <div id="tab-dashboard" class="tab-content active space-y-6">
             <div class="glass-panel p-6 text-center">
                 <p class="text-sm uppercase tracking-wider opacity-70 mb-1">Estimated Net Worth</p>
                 <h2 class="text-4xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(netWorth)}</h2>
             </div>
-            
-            <div>
-                <h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>
-                ${generateInsights()}
+            <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
+            <div><h3 class="text-lg font-bold mb-3">Accounts</h3>
+                <div class="grid grid-cols-2 gap-3">${appState.accounts.map(acc => `<div class="glass-panel p-4"><p class="text-xs opacity-70 truncate">${acc.name}</p><p class="text-lg font-bold mt-1">${formatCurrency(acc.balance)}</p></div>`).join('')}</div>
             </div>
-
-            <div>
-                <h3 class="text-lg font-bold mb-3">Accounts Overview</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    ${appState.accounts.map(acc => `
-                        <div class="glass-panel p-4">
-                            <p class="text-xs opacity-70 truncate">${acc.name}</p>
-                            <p class="text-lg font-bold mt-1">${formatCurrency(acc.balance)}</p>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        </div>
-    `;
+        </div>`;
 }
 
-/**
- * BILLS LOGIC
- */
-function toggleBill(id) {
-    const bill = appState.bills.find(b => b.id === id);
-    if(bill) {
-        bill.paid = !bill.paid;
-        saveState();
-    }
-}
-
-function deleteBill(id) {
-    appState.bills = appState.bills.filter(b => b.id !== id);
-    if(editingBillId === id) cancelEditBill();
-    saveState();
-}
-
+function toggleBill(id) { const bill = appState.bills.find(b => b.id === id); if(bill) { bill.paid = !bill.paid; saveState(); } }
+function deleteBill(id) { appState.bills = appState.bills.filter(b => b.id !== id); if(editingBillId === id) cancelEditBill(); saveState(); }
 function editBill(id) {
-    const bill = appState.bills.find(b => b.id === id);
-    if(!bill) return;
-    
-    document.getElementById('new-bill-name').value = bill.name;
-    document.getElementById('new-bill-amount').value = bill.amount;
-    document.getElementById('new-bill-period').value = bill.period;
-    document.getElementById('new-bill-date').value = bill.dueDate || '';
-    
+    const bill = appState.bills.find(b => b.id === id); if(!bill) return;
+    document.getElementById('new-bill-name').value = bill.name; document.getElementById('new-bill-amount').value = bill.amount; document.getElementById('new-bill-period').value = bill.period; document.getElementById('new-bill-date').value = bill.dueDate || '';
     editingBillId = id;
-    const btn = document.getElementById('submit-bill-btn');
-    btn.innerHTML = `<i data-lucide="save"></i> Update Bill`;
-    btn.classList.replace('bg-blue-600', 'bg-green-600');
-    btn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
-    document.getElementById('cancel-edit-btn').classList.remove('hidden');
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    lucide.createIcons();
+    const btn = document.getElementById('submit-bill-btn'); btn.innerHTML = `<i data-lucide="save"></i> Update Bill`; btn.classList.replace('bg-blue-600', 'bg-green-600'); document.getElementById('cancel-edit-btn').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' }); lucide.createIcons();
 }
-
 function cancelEditBill() {
-    editingBillId = null;
-    document.getElementById('new-bill-name').value = '';
-    document.getElementById('new-bill-amount').value = '';
-    document.getElementById('new-bill-period').value = '1';
-    document.getElementById('new-bill-date').value = '';
-    
-    const btn = document.getElementById('submit-bill-btn');
-    btn.innerHTML = `<i data-lucide="plus-circle"></i> Add Bill`;
-    btn.classList.replace('bg-green-600', 'bg-blue-600');
-    btn.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
-    document.getElementById('cancel-edit-btn').classList.add('hidden');
-    lucide.createIcons();
+    editingBillId = null; document.getElementById('new-bill-name').value = ''; document.getElementById('new-bill-amount').value = ''; document.getElementById('new-bill-period').value = '1'; document.getElementById('new-bill-date').value = '';
+    const btn = document.getElementById('submit-bill-btn'); btn.innerHTML = `<i data-lucide="plus-circle"></i> Add Bill`; btn.classList.replace('bg-green-600', 'bg-blue-600'); document.getElementById('cancel-edit-btn').classList.add('hidden'); lucide.createIcons();
 }
-
 function submitBill() {
-    const name = document.getElementById('new-bill-name').value.trim();
-    const amount = parseFloat(document.getElementById('new-bill-amount').value);
-    const period = parseInt(document.getElementById('new-bill-period').value);
-    const dueDateInput = document.getElementById('new-bill-date').value;
+    const name = document.getElementById('new-bill-name').value.trim(), amount = parseFloat(document.getElementById('new-bill-amount').value), period = parseInt(document.getElementById('new-bill-period').value), dueDateInput = document.getElementById('new-bill-date').value;
     const dueDate = dueDateInput ? parseInt(dueDateInput) : (period === 1 ? 1 : 16);
-
     if(name && !isNaN(amount) && amount > 0) {
-        if(editingBillId) {
-            const bill = appState.bills.find(b => b.id === editingBillId);
-            if(bill) {
-                bill.name = name; bill.amount = amount; bill.period = period; bill.dueDate = dueDate;
-            }
-            editingBillId = null;
-        } else {
-            appState.bills.push({ id: 'b_' + Date.now(), name, amount, period, dueDate, paid: false });
-        }
+        if(editingBillId) { const bill = appState.bills.find(b => b.id === editingBillId); if(bill) { bill.name = name; bill.amount = amount; bill.period = period; bill.dueDate = dueDate; } editingBillId = null; } 
+        else { appState.bills.push({ id: 'b_' + Date.now(), name, amount, period, dueDate, paid: false }); }
         saveState(); 
     }
 }
@@ -595,383 +254,90 @@ function renderBills() {
     if(!appState) return '';
     const renderPeriod = (periodNum) => {
         const periodBills = appState.bills.filter(b => b.period === periodNum).sort((a,b) => (a.dueDate || 0) - (b.dueDate || 0));
-        const total = periodBills.reduce((sum, b) => sum + b.amount, 0);
-        const paid = periodBills.filter(b => b.paid).reduce((sum, b) => sum + b.amount, 0);
-        const remaining = total - paid;
-        const income = periodNum === 1 ? appState.income.period1 : appState.income.period2;
-
+        const total = periodBills.reduce((sum, b) => sum + b.amount, 0), paid = periodBills.filter(b => b.paid).reduce((sum, b) => sum + b.amount, 0), remaining = total - paid;
         return `
             <div class="glass-panel p-4 mb-6">
                 <div class="flex justify-between items-end mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <div>
-                        <h2 class="text-xl font-bold text-blue-500 dark:text-blue-400">Period ${periodNum}</h2>
-                        <p class="text-xs opacity-70">Expected Income: ${formatCurrency(income)}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm opacity-70">Remaining</p>
-                        <p class="text-lg font-bold">${formatCurrency(remaining)}</p>
-                    </div>
+                    <div><h2 class="text-xl font-bold text-blue-500 dark:text-blue-400">Period ${periodNum}</h2></div>
+                    <div class="text-right"><p class="text-sm opacity-70">Remaining</p><p class="text-lg font-bold">${formatCurrency(remaining)}</p></div>
                 </div>
                 <div class="space-y-3">
                     ${periodBills.map(b => `
                         <div class="flex items-center justify-between p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">
                             <label class="flex items-center gap-3 cursor-pointer flex-grow">
-                                <div class="checkbox-wrapper">
-                                    <input type="checkbox" ${b.paid ? 'checked' : ''} onchange="toggleBill('${b.id}')">
-                                    <span class="checkmark"></span>
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="${b.paid ? 'line-through opacity-50' : 'font-medium'}">${b.name}</span>
-                                    <span class="text-[10px] opacity-60">Due: ${b.dueDate ? b.dueDate + (['st','nd','rd'][((b.dueDate+90)%100-10)%10-1]||'th') : 'N/A'}</span>
-                                </div>
+                                <div class="checkbox-wrapper"><input type="checkbox" ${b.paid ? 'checked' : ''} onchange="toggleBill('${b.id}')"><span class="checkmark"></span></div>
+                                <div class="flex flex-col"><span class="${b.paid ? 'line-through opacity-50' : 'font-medium'}">${b.name}</span><span class="text-[10px] opacity-60">Due: ${b.dueDate ? b.dueDate : 'N/A'}</span></div>
                             </label>
-                            <div class="flex items-center gap-2 pl-2">
-                                <span class="font-medium mr-2 ${b.paid ? 'opacity-50 line-through' : ''}">${formatCurrency(b.amount)}</span>
-                                <button onclick="editBill('${b.id}')" class="text-blue-400 hover:text-blue-500 transition p-1"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                                <button onclick="deleteBill('${b.id}')" class="text-red-400 hover:text-red-500 transition p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <div class="flex items-center gap-2 pl-2"><span class="font-medium mr-2 ${b.paid ? 'opacity-50 line-through' : ''}">${formatCurrency(b.amount)}</span>
+                                <button onclick="editBill('${b.id}')" class="text-blue-400 p-1"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteBill('${b.id}')" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                             </div>
-                        </div>
-                    `).join('')}
+                        </div>`).join('')}
                 </div>
-                <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between text-sm">
-                    <span>Total Paid: <strong class="text-green-500">${formatCurrency(paid)}</strong></span>
-                    <span>Total Bills: <strong>${formatCurrency(total)}</strong></span>
-                </div>
-            </div>
-        `;
+                <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between text-sm"><span>Paid: <strong class="text-green-500">${formatCurrency(paid)}</strong></span><span>Total: <strong>${formatCurrency(total)}</strong></span></div>
+            </div>`;
     };
-
-    return `
-        <div id="tab-bills" class="tab-content">
-            <div class="glass-panel p-4 mb-6">
-                <h3 class="font-bold mb-3 flex items-center gap-2"><i data-lucide="file-plus-2"></i> Manage Bills</h3>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <input type="text" id="new-bill-name" placeholder="Bill Name (e.g. Netflix)" class="glass-input col-span-2 text-sm">
-                    <input type="number" id="new-bill-amount" placeholder="Amount ($)" class="glass-input text-sm">
-                    <select id="new-bill-period" class="glass-input text-sm">
-                        <option value="1">Period 1 (1st-15th)</option>
-                        <option value="2">Period 2 (16th-EOM)</option>
-                    </select>
-                    <input type="number" id="new-bill-date" placeholder="Due Date (1-31)" class="glass-input col-span-2 text-sm" min="1" max="31">
-                </div>
-                <div class="flex gap-2">
-                    <button id="submit-bill-btn" onclick="submitBill()" class="flex-grow bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition flex items-center justify-center gap-2 text-sm">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Bill
-                    </button>
-                    <button id="cancel-edit-btn" onclick="cancelEditBill()" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-xl transition text-sm">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-            ${renderPeriod(1)}
-            ${renderPeriod(2)}
-        </div>
-    `;
+    return `<div id="tab-bills" class="tab-content"><div class="glass-panel p-4 mb-6"><h3 class="font-bold mb-3 flex items-center gap-2"><i data-lucide="file-plus-2"></i> Manage Bills</h3><div class="grid grid-cols-2 gap-3 mb-3"><input type="text" id="new-bill-name" placeholder="Name" class="glass-input col-span-2 text-sm"><input type="number" id="new-bill-amount" placeholder="Amount" class="glass-input text-sm"><select id="new-bill-period" class="glass-input text-sm"><option value="1">Period 1</option><option value="2">Period 2</option></select><input type="number" id="new-bill-date" placeholder="Day (1-31)" class="glass-input col-span-2 text-sm" min="1" max="31"></div><div class="flex gap-2"><button id="submit-bill-btn" onclick="submitBill()" class="flex-grow bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition flex items-center justify-center gap-2 text-sm"><i data-lucide="plus-circle" class="w-4 h-4"></i> Add</button><button id="cancel-edit-btn" onclick="cancelEditBill()" class="hidden bg-gray-500 text-white font-bold py-2 px-4 rounded-xl text-sm">Cancel</button></div></div>${renderPeriod(1)}${renderPeriod(2)}</div>`;
 }
 
-/**
- * KEYPAD LOGIC
- */
 function keypadPress(val) {
-    if (val === 'DEL') {
-        appState.keypadAmount = appState.keypadAmount.slice(0, -1);
-        if (appState.keypadAmount === '') appState.keypadAmount = "0";
-    } else if (val === '.') {
-        if (!appState.keypadAmount.includes('.')) appState.keypadAmount += '.';
-    } else {
-        if (appState.keypadAmount === "0") appState.keypadAmount = val;
-        else {
-            if(appState.keypadAmount.includes('.') && appState.keypadAmount.split('.')[1].length >= 2) return;
-            appState.keypadAmount += val;
-        }
-    }
+    if (val === 'DEL') { appState.keypadAmount = appState.keypadAmount.slice(0, -1); if (appState.keypadAmount === '') appState.keypadAmount = "0"; } 
+    else if (val === '.') { if (!appState.keypadAmount.includes('.')) appState.keypadAmount += '.'; } 
+    else { if (appState.keypadAmount === "0") appState.keypadAmount = val; else { if(appState.keypadAmount.includes('.') && appState.keypadAmount.split('.')[1].length >= 2) return; appState.keypadAmount += val; } }
     document.getElementById('keypad-display').innerText = '$' + appState.keypadAmount;
 }
-
 function saveExpense() {
     const amt = parseFloat(appState.keypadAmount);
     if(amt > 0) {
         appState.expenses.push({ id: Date.now(), category: appState.keypadCategory, amount: amt, date: new Date().toISOString() });
-        appState.keypadAmount = "0";
-        saveState();
-        
-        const btn = document.getElementById('save-expense-btn');
-        const ogText = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved to Cloud!`;
-        btn.classList.add('bg-green-500');
-        lucide.createIcons();
-        setTimeout(() => {
-            btn.innerHTML = ogText;
-            btn.classList.remove('bg-green-500');
-            lucide.createIcons();
-            document.getElementById('keypad-display').innerText = '$0';
-        }, 1500);
+        appState.keypadAmount = "0"; saveState();
+        const btn = document.getElementById('save-expense-btn'); const ogText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-6 h-6 inline"></i> Saved!`; btn.classList.add('bg-green-500'); lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
     }
 }
-
 function changeCategory(e) { appState.keypadCategory = e.target.value; }
 
 function renderKeypad() {
     if(!appState) return '';
-    return `
-        <div id="tab-keypad" class="tab-content flex flex-col h-[calc(100vh-140px)]">
-            <div class="glass-panel p-4 mb-4 flex-shrink-0">
-                <select onchange="changeCategory(event)" class="glass-input w-full text-lg font-medium text-center appearance-none mb-4">
-                    ${appState.categories.map(c => `<option value="${c}" ${appState.keypadCategory === c ? 'selected' : ''}>${c}</option>`).join('')}
-                </select>
-                <div id="keypad-display" class="text-6xl font-bold text-center tracking-tighter py-4">$${appState.keypadAmount}</div>
-            </div>
-            <div class="grid grid-cols-3 gap-3 flex-grow">
-                ${[1,2,3,4,5,6,7,8,9,'.',0,'DEL'].map(k => `
-                    <button onclick="keypadPress('${k}')" class="keypad-btn">${k === 'DEL' ? '<i data-lucide="delete"></i>' : k}</button>
-                `).join('')}
-            </div>
-            <div class="mt-3 flex-shrink-0">
-                <button id="save-expense-btn" onclick="saveExpense()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition text-xl flex justify-center items-center gap-2">
-                    <i data-lucide="cloud-upload"></i> Sync Expense
-                </button>
-            </div>
-        </div>
-    `;
+    return `<div id="tab-keypad" class="tab-content flex flex-col h-[calc(100vh-140px)]"><div class="glass-panel p-4 mb-4 flex-shrink-0"><select onchange="changeCategory(event)" class="glass-input w-full text-lg font-medium text-center appearance-none mb-4">${appState.categories.map(c => `<option value="${c}" ${appState.keypadCategory === c ? 'selected' : ''}>${c}</option>`).join('')}</select><div id="keypad-display" class="text-6xl font-bold text-center tracking-tighter py-4">$${appState.keypadAmount}</div></div><div class="grid grid-cols-3 gap-3 flex-grow">${[1,2,3,4,5,6,7,8,9,'.',0,'DEL'].map(k => `<button onclick="keypadPress('${k}')" class="keypad-btn">${k === 'DEL' ? '<i data-lucide="delete"></i>' : k}</button>`).join('')}</div><div class="mt-3 flex-shrink-0"><button id="save-expense-btn" onclick="saveExpense()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition text-xl flex justify-center items-center gap-2"><i data-lucide="cloud-upload"></i> Sync Expense</button></div></div>`;
 }
 
-/**
- * CALENDAR LOGIC
- */
 function renderCalendar() {
     if(!appState) return '';
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
-    let grid = '';
-    for(let i=0; i<firstDayOfWeek; i++) grid += `<div class="aspect-square"></div>`;
-
+    const today = new Date(), currentYear = today.getFullYear(), currentMonth = today.getMonth(), daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate(), firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+    let grid = ''; for(let i=0; i<firstDayOfWeek; i++) grid += `<div class="aspect-square"></div>`;
     for(let i=1; i<=daysInMonth; i++) {
-        const isToday = i === today.getDate();
-        const isPayday = i === 1 || i === 15;
-        const dayBills = appState.bills.filter(b => b.dueDate === i);
-        const hasUnpaid = dayBills.some(b => !b.paid);
-        const hasPaid = dayBills.some(b => b.paid);
-        
+        const isToday = i === today.getDate(), dayBills = appState.bills.filter(b => b.dueDate === i);
         let indicator = '';
-        if(hasUnpaid) indicator = `<div class="w-2 h-2 rounded-full bg-red-400 mt-1 shadow-[0_0_5px_rgba(248,113,113,0.8)]"></div>`;
-        else if(hasPaid) indicator = `<div class="w-2 h-2 rounded-full bg-green-500 mt-1"></div>`;
-        else if(isPayday) indicator = `<div class="text-[10px] text-green-400 font-bold mt-1">PAY</div>`;
-
-        grid += `
-            <div class="aspect-square glass-panel flex flex-col items-center justify-center relative cursor-pointer hover:bg-white/10 transition ${isToday ? 'ring-2 ring-blue-500 bg-blue-500/20 shadow-lg scale-105 z-10' : ''}">
-                <span class="text-sm font-bold ${isToday ? 'text-blue-100' : ''}">${i}</span>
-                ${indicator}
-            </div>
-        `;
+        if(dayBills.some(b => !b.paid)) indicator = `<div class="w-2 h-2 rounded-full bg-red-400 mt-1"></div>`; else if(dayBills.some(b => b.paid)) indicator = `<div class="w-2 h-2 rounded-full bg-green-500 mt-1"></div>`;
+        grid += `<div class="aspect-square glass-panel flex flex-col items-center justify-center relative cursor-pointer ${isToday ? 'ring-2 ring-blue-500 bg-blue-500/20' : ''}"><span class="text-sm font-bold">${i}</span>${indicator}</div>`;
     }
-
-    return `
-        <div id="tab-calendar" class="tab-content space-y-6">
-            <div class="glass-panel p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="calendar-days"></i> ${monthNames[currentMonth]} ${currentYear}</h2>
-                </div>
-                <div class="flex flex-wrap gap-3 mb-4 text-xs font-medium justify-center">
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_5px_rgba(248,113,113,0.8)]"></div> Unpaid Bill</div>
-                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-green-500"></div> Paid Bill</div>
-                    <div class="flex items-center gap-1 font-bold text-green-400">PAY: Expected Payday</div>
-                </div>
-                <div class="grid grid-cols-7 gap-2">
-                    ${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}
-                    ${grid}
-                </div>
-            </div>
-            
-            <div class="glass-panel p-4">
-                <h3 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="target"></i> Hitch / Paycheck Forecaster</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-xs opacity-70 block mb-1">Target Goal Amount ($)</label>
-                        <input type="number" id="fc-target" class="glass-input" value="10000">
-                    </div>
-                    <div>
-                        <label class="text-xs opacity-70 block mb-1">Savings Allocated per Check ($)</label>
-                        <input type="number" id="fc-savings" class="glass-input" value="1200">
-                    </div>
-                    <button onclick="calculateForecast()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-2 transition">Calculate Trajectory</button>
-                    <div id="fc-result" class="text-center p-3 rounded-lg bg-blue-500/20 text-blue-100 font-medium text-sm mt-4 hidden"></div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function calculateForecast() {
-    const target = parseFloat(document.getElementById('fc-target').value);
-    const savings = parseFloat(document.getElementById('fc-savings').value);
-    const resultDiv = document.getElementById('fc-result');
-    if(savings > 0 && target > 0) {
-        const checks = Math.ceil(target / savings);
-        resultDiv.innerHTML = `It will take <strong>${checks} consecutive paychecks/hitches</strong> to reach ${formatCurrency(target)}.`;
-        resultDiv.classList.remove('hidden');
-    }
-}
-
-/**
- * WEALTH LOGIC
- */
-function addNewDebt() {
-    const name = document.getElementById('new-debt-name').value;
-    const balance = parseFloat(document.getElementById('new-debt-balance').value);
-    const minPayment = parseFloat(document.getElementById('new-debt-min').value);
-    const interest = parseFloat(document.getElementById('new-debt-int').value);
-
-    if(name && balance) {
-        appState.debts.push({ id: 'd_' + Date.now(), name, balance, minPayment: minPayment||0, interest: interest||0 });
-        saveState(); 
-    }
-}
-
-function updateInvestment() {
-    const principal = parseFloat(document.getElementById('inv-principal').value);
-    const monthly = parseFloat(document.getElementById('inv-monthly').value);
-    const rate = parseFloat(document.getElementById('inv-rate').value) / 100;
-    
-    document.getElementById('lbl-principal').innerText = formatCurrency(principal);
-    document.getElementById('lbl-monthly').innerText = formatCurrency(monthly);
-    document.getElementById('lbl-rate').innerText = (rate*100).toFixed(1) + '%';
-
-    const calc = (years) => {
-        const n = 12, t = years, P = principal, PMT = monthly, r = rate;
-        if (r === 0) return P + (PMT * 12 * t);
-        const compoundFactor = Math.pow(1 + r/n, n*t);
-        return (P * compoundFactor) + (PMT * ((compoundFactor - 1) / (r/n)));
-    };
-
-    document.getElementById('inv-5yr').innerText = formatCurrency(calc(5));
-    document.getElementById('inv-10yr').innerText = formatCurrency(calc(10));
-    document.getElementById('inv-25yr').innerText = formatCurrency(calc(25));
+    return `<div id="tab-calendar" class="tab-content space-y-6"><div class="glass-panel p-4"><div class="grid grid-cols-7 gap-2">${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}${grid}</div></div></div>`;
 }
 
 function renderWealth() {
     if(!appState) return '';
     const sortedDebts = [...appState.debts].sort((a, b) => b.interest - a.interest);
-
-    return `
-        <div id="tab-wealth" class="tab-content space-y-6 pb-10">
-            <div class="glass-panel p-4">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="trending-up"></i> Investment Simulator</h2>
-                <div class="space-y-4 mb-6">
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="opacity-70">Initial Principal</span> <strong id="lbl-principal">$10,000</strong></div>
-                        <input type="range" id="inv-principal" min="0" max="100000" step="1000" value="10000" oninput="updateInvestment()">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="opacity-70">Monthly Contribution</span> <strong id="lbl-monthly">$500</strong></div>
-                        <input type="range" id="inv-monthly" min="0" max="5000" step="50" value="500" oninput="updateInvestment()">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-sm mb-1"><span class="opacity-70">Expected Return</span> <strong id="lbl-rate">7.0%</strong></div>
-                        <input type="range" id="inv-rate" min="0" max="15" step="0.5" value="7.0" oninput="updateInvestment()">
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                    <div class="glass-panel p-2 bg-blue-500/10">
-                        <div class="text-[10px] opacity-70 uppercase font-bold tracking-widest">5 Years</div>
-                        <div class="font-bold text-blue-400 mt-1" id="inv-5yr">...</div>
-                    </div>
-                    <div class="glass-panel p-2 bg-blue-500/10">
-                        <div class="text-[10px] opacity-70 uppercase font-bold tracking-widest">10 Years</div>
-                        <div class="font-bold text-blue-400 mt-1" id="inv-10yr">...</div>
-                    </div>
-                    <div class="glass-panel p-2 bg-green-500/10 border-green-500/30">
-                        <div class="text-[10px] opacity-70 uppercase font-bold tracking-widest text-green-400">25 Years</div>
-                        <div class="font-bold text-green-400 mt-1" id="inv-25yr">...</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass-panel p-4">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="flame"></i> Debt Strategy</h2>
-                <div class="space-y-3 mb-6">
-                    ${sortedDebts.map((d, index) => `
-                        <div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden shadow-inner">
-                            ${index === 0 ? '<div class="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-md">AVALANCHE PRIORITY</div>' : ''}
-                            <div class="flex justify-between font-bold">
-                                <span>${d.name}</span>
-                                <span>${formatCurrency(d.balance)}</span>
-                            </div>
-                            <div class="flex justify-between text-xs opacity-70 mt-1">
-                                <span>Min: ${formatCurrency(d.minPayment)}</span>
-                                <span class="${index === 0 ? 'text-red-400 font-bold' : ''}">Rate: ${d.interest}%</span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                <h3 class="font-bold text-sm mb-2 mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">Add New Debt Profile</h3>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <input type="text" id="new-debt-name" placeholder="Debt Name" class="glass-input col-span-2 text-sm">
-                    <input type="number" id="new-debt-balance" placeholder="Balance ($)" class="glass-input text-sm">
-                    <input type="number" id="new-debt-int" placeholder="Interest (%)" class="glass-input text-sm">
-                    <input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm">
-                </div>
-                <button onclick="addNewDebt()" class="w-full bg-gray-800 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-200 text-white dark:text-black font-bold py-3 rounded-xl mt-2 text-sm transition">Sync New Debt to Cloud</button>
-            </div>
-        </div>
-    `;
+    return `<div id="tab-wealth" class="tab-content space-y-6 pb-10"><div class="glass-panel p-4"><h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="flame"></i> Debt Strategy</h2><div class="space-y-3">${sortedDebts.map((d, index) => `<div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative"><div class="flex justify-between font-bold"><span>${d.name}</span><span>${formatCurrency(d.balance)}</span></div><div class="flex justify-between text-xs opacity-70 mt-1"><span>Min: ${formatCurrency(d.minPayment)}</span><span class="${index===0?'text-red-400':''}">${d.interest}%</span></div></div>`).join('')}</div></div></div>`;
 }
 
-/**
- * CORE RENDER
- */
 function renderApp() {
     if(!appState) return;
-    const container = document.getElementById('app-container');
-    container.innerHTML = `
-        ${renderDashboard()}
-        ${renderBills()}
-        ${renderKeypad()}
-        ${renderCalendar()}
-        ${renderWealth()}
-    `;
+    document.getElementById('app-container').innerHTML = `${renderDashboard()}${renderBills()}${renderKeypad()}${renderCalendar()}${renderWealth()}`;
     lucide.createIcons();
-    
     const activeNav = document.querySelector('.nav-btn.text-blue-500, .nav-btn.dark\\:text-blue-400, .nav-btn.scale-110');
-    if(activeNav) {
-        const target = activeNav.dataset.target;
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        const tab = document.getElementById(`tab-${target}`);
-        if(tab) tab.classList.add('active');
-    }
-    
+    if(activeNav) { const tab = document.getElementById(`tab-${activeNav.dataset.target}`); if(tab) tab.classList.add('active'); }
     if(editingBillId) editBill(editingBillId);
-    if(document.getElementById('inv-principal')) updateInvestment();
 }
 
-/**
- * EXPORT TO WINDOW (Module Scope Fix for Inline HTML Handlers)
- */
-window.toggleTheme = toggleTheme;
-window.switchTab = switchTab;
-window.toggleBill = toggleBill;
-window.deleteBill = deleteBill;
-window.editBill = editBill;
-window.cancelEditBill = cancelEditBill;
-window.submitBill = submitBill;
-window.keypadPress = keypadPress;
-window.saveExpense = saveExpense;
-window.changeCategory = changeCategory;
-window.calculateForecast = calculateForecast;
-window.addNewDebt = addNewDebt;
-window.updateInvestment = updateInvestment;
+window.forceStartOffline = function() {
+    appState = DEFAULT_DATA; document.getElementById('loading-overlay').classList.add('hidden'); renderApp();
+}
 
-// Start the Application
+// Export functions
+window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.forceStartOffline = forceStartOffline;
+
 initCloudState();
-
 </script>
 </body>
 </html>
-
-
-`
-
