@@ -65,15 +65,17 @@
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2"></div>
 
+    <!-- INDESTRUCTIBLE LOADING OVERLAY -->
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <h2 class="text-xl font-bold tracking-tight">Syncing with Cloud...</h2>
-        <p id="debug-text" class="text-xs text-blue-400 mt-3 font-mono font-bold tracking-wider uppercase">Loading Core Engine...</p>
+        <h2 class="text-xl font-bold tracking-tight">Booting Engine...</h2>
+        <p id="debug-text" class="text-xs text-blue-400 mt-3 font-mono font-bold tracking-wider uppercase">Checking Local Memory...</p>
         <button onclick="window.forceStartOffline()" class="mt-8 bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-white/20 active:scale-95 transition flex items-center gap-2 cursor-pointer relative z-50">
             <i data-lucide="zap-off" class="w-4 h-4"></i> Skip & Use Offline
         </button>
     </div>
 
+    <!-- LOGAN TEXT MESSAGE MODAL -->
     <div id="logan-modal" class="hidden fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-[#1c1c1e] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
             <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-gray-800">
@@ -128,24 +130,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8",
-    authDomain: "lumina-budget-68f2e.firebaseapp.com",
-    projectId: "lumina-budget-68f2e",
-    storageBucket: "lumina-budget-68f2e.firebasestorage.app",
-    messagingSenderId: "607768723800",
-    appId: "1:607768723800:web:f9ba689c83778ffd8a252d"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const stateDocRef = doc(db, "budgetApp", "mainState");
-
+// DYNAMIC IMPORT ENGINE - 100% AdBlocker Proof
 const DEFAULT_DATA = {
     accounts: [ { id: 1, name: 'RBC Chequing', balance: 2500 }, { id: 2, name: 'RBC Savings', balance: 10000 }, { id: 3, name: 'BMO Chequing', balance: 1200 }, { id: 4, name: 'BMO Savings', balance: 5000 }, { id: 5, name: 'NEO', balance: 350 }, { id: 6, name: 'Capital One', balance: 0 } ],
     categories: ['Austin - Work', 'Bills', 'Convenience Grabs', 'Credit Card', 'Eating Out', 'Fun Money', 'Gas/Auto', 'Gifts', 'Groceries', 'House', 'Kids', 'Medical', 'Other', 'Personal Care', 'Travel', 'Unexpected Bill'],
@@ -158,7 +143,6 @@ const DEFAULT_DATA = {
     debts: [ { id: 'd1', name: 'Truck/TD Loan', balance: 35000, minPayment: 808, interest: 6.5 }, { id: 'd2', name: 'Spring Financial', balance: 3000, minPayment: 160, interest: 12.0 }, { id: 'd3', name: 'Student Loans', balance: 15000, minPayment: 240, interest: 0 }, { id: 'd4', name: 'ENMAX RL (Collection)', balance: 368, minPayment: 0, interest: 0 }, { id: 'd5', name: 'GODAY INC (Collection)', balance: 559, minPayment: 0, interest: 0 }, { id: 'd6', name: 'PRESTOCASH (Collection)', balance: 1011, minPayment: 0, interest: 0 }, { id: 'd7', name: 'RIFCO AUTO (Collection)', balance: 17613, minPayment: 0, interest: 0 } ],
     camping: { saved: 0, target: 1500 },
     garage: [ { id: 'g1', name: 'Ford 6.0L Bulletproof & 500HP Build', target: 6500, saved: 0 } ],
-    // DAYFORCE STUB DEFAULTS
     payConfig: { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] },
     hitch: { active: false, start: null, earned: 0 },
     goals: [], keypadAmount: "0", keypadCategory: "Convenience Grabs"
@@ -167,41 +151,80 @@ const DEFAULT_DATA = {
 let appState = null;
 let editingBillId = null;
 let liveGrindTimer = null;
+let fb_setDoc = null;
+let stateDocRef = null;
 
+// 1. Immediately Wire Up the Offline Escape Hatch
 window.forceStartOffline = function() {
-    appState = DEFAULT_DATA; 
+    clearTimeout(window.emergencyTimer);
+    const localMemory = localStorage.getItem('lumina_local_save');
+    if (localMemory) {
+        appState = JSON.parse(localMemory);
+    } else {
+        appState = DEFAULT_DATA;
+    }
     document.getElementById('loading-overlay').style.display = 'none';
-    document.getElementById('cloud-status').classList.remove('bg-yellow-400', 'bg-green-500');
     document.getElementById('cloud-status').classList.add('bg-gray-500');
     renderApp();
 };
 
+// 2. Set the 4-Second Auto-Nuke Timer
+window.emergencyTimer = setTimeout(() => {
+    const debug = document.getElementById('debug-text');
+    if(debug) debug.innerText = "Network blocked. Booting from local memory...";
+    window.forceStartOffline();
+}, 4000);
+
+// 3. Attempt to Download Cloud Scripts Dynamically
 async function initCloudState() {
     const debug = document.getElementById('debug-text');
-    const networkTimeout = setTimeout(() => { debug.innerText = "Network blocked by browser. Opening offline..."; window.forceStartOffline(); }, 5000);
-
     try {
-        await signInAnonymously(auth);
-        const docSnap = await getDoc(stateDocRef);
+        debug.innerText = "Step 1/3: Downloading Cloud Modules...";
+        const appModule = await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js");
+        const firestoreModule = await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js");
+        const authModule = await import("https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js");
+
+        debug.innerText = "Step 2/3: Authenticating...";
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8",
+            authDomain: "lumina-budget-68f2e.firebaseapp.com",
+            projectId: "lumina-budget-68f2e",
+            storageBucket: "lumina-budget-68f2e.firebasestorage.app",
+            messagingSenderId: "607768723800",
+            appId: "1:607768723800:web:f9ba689c83778ffd8a252d"
+        };
+        const app = appModule.initializeApp(firebaseConfig);
+        const db = firestoreModule.getFirestore(app);
+        const auth = authModule.getAuth(app);
+        stateDocRef = firestoreModule.doc(db, "budgetApp", "mainState");
+        fb_setDoc = firestoreModule.setDoc;
+
+        await authModule.signInAnonymously(auth);
+        
+        debug.innerText = "Step 3/3: Syncing interface...";
+        const docSnap = await firestoreModule.getDoc(stateDocRef);
         
         if (!docSnap.exists()) {
-            await setDoc(stateDocRef, DEFAULT_DATA);
-            appState = DEFAULT_DATA;
+            const localMemory = localStorage.getItem('lumina_local_save');
+            if (localMemory) appState = JSON.parse(localMemory);
+            else appState = DEFAULT_DATA;
+            await fb_setDoc(stateDocRef, appState);
         } else {
             appState = docSnap.data();
             let needsUpdate = false;
             if (!appState.payConfig) { appState.payConfig = { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] }; needsUpdate = true; }
             if (!appState.hitch || typeof appState.hitch.start === 'string') { appState.hitch = { active: false, start: null, earned: 0 }; needsUpdate = true; }
-            if (needsUpdate) await setDoc(stateDocRef, appState);
+            if (needsUpdate) await fb_setDoc(stateDocRef, appState);
         }
 
-        clearTimeout(networkTimeout); 
+        clearTimeout(window.emergencyTimer); 
 
-        onSnapshot(stateDocRef, (snapshot) => {
+        firestoreModule.onSnapshot(stateDocRef, (snapshot) => {
             if (snapshot.exists()) {
                 appState = snapshot.data();
                 if (!appState.payConfig) appState.payConfig = { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] };
                 if (!appState.hitch) appState.hitch = { active: false, start: null, earned: 0 };
+                localStorage.setItem('lumina_local_save', JSON.stringify(appState)); // Save to phone memory instantly
                 renderApp();
             }
         });
@@ -211,23 +234,28 @@ async function initCloudState() {
         renderApp();
         
     } catch (error) {
-        clearTimeout(networkTimeout);
-        document.getElementById('cloud-status').classList.add('bg-red-500');
-        setTimeout(() => window.forceStartOffline(), 2000);
+        clearTimeout(window.emergencyTimer);
+        console.error(error);
+        debug.innerText = "Cloud modules blocked. Forcing offline mode...";
+        setTimeout(() => window.forceStartOffline(), 1500);
     }
 }
 
 async function saveState() {
     renderApp(); 
-    document.getElementById('cloud-status').classList.remove('bg-green-500', 'animate-pulse', 'bg-red-500', 'bg-gray-500');
-    document.getElementById('cloud-status').classList.add('bg-yellow-400');
-    try {
-        await setDoc(stateDocRef, appState);
-        document.getElementById('cloud-status').classList.remove('bg-yellow-400');
-        document.getElementById('cloud-status').classList.add('bg-green-500', 'animate-pulse');
-    } catch (error) {
-        document.getElementById('cloud-status').classList.remove('bg-yellow-400');
-        document.getElementById('cloud-status').classList.add('bg-red-500');
+    localStorage.setItem('lumina_local_save', JSON.stringify(appState)); // Instant Offline Save
+    
+    if(fb_setDoc && stateDocRef) {
+        document.getElementById('cloud-status').classList.remove('bg-green-500', 'animate-pulse', 'bg-red-500', 'bg-gray-500');
+        document.getElementById('cloud-status').classList.add('bg-yellow-400');
+        try {
+            await fb_setDoc(stateDocRef, appState);
+            document.getElementById('cloud-status').classList.remove('bg-yellow-400');
+            document.getElementById('cloud-status').classList.add('bg-green-500', 'animate-pulse');
+        } catch (error) {
+            document.getElementById('cloud-status').classList.remove('bg-yellow-400');
+            document.getElementById('cloud-status').classList.add('bg-red-500');
+        }
     }
 }
 
@@ -261,10 +289,8 @@ function addCampingFunds() {
     if(newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) { appState.camping.saved += parseFloat(newVal); saveState(); }
 }
 
-// THE GRIND METER ENGINE
 function calculateTotalNetHitch() {
-    // Math based on Dayforce
-    const totalDays = 16; // Standard hitch based on his 192 hours
+    const totalDays = 16; 
     const totalGross = totalDays * appState.payConfig.grossDaily;
     const taxDeduction = totalGross * (appState.payConfig.taxRate / 100);
     const totalReimb = totalDays * appState.payConfig.dailyReimbursements;
@@ -284,14 +310,13 @@ function toggleHitch(e) {
     } else {
         if(appState.hitch.start) {
             const totalNet = calculateTotalNetHitch();
-            const totalMs = 16 * 24 * 60 * 60 * 1000; // 16 Days
+            const totalMs = 16 * 24 * 60 * 60 * 1000; 
             const msPassed = Date.now() - appState.hitch.start;
             appState.hitch.earned = (msPassed / totalMs) * totalNet;
         }
         appState.hitch.active = false;
         appState.hitch.start = null;
         saveState();
-        
         const el = document.getElementById('live-grind-meter');
         if(el) el.innerText = formatCurrencyWithCents(appState.hitch.earned);
     }
@@ -308,11 +333,9 @@ function startGrindMeter() {
     liveGrindTimer = setInterval(() => {
         const el = document.getElementById('live-grind-meter');
         if(!el) return;
-        
         const totalNet = calculateTotalNetHitch();
-        const totalMs = 16 * 24 * 60 * 60 * 1000; // 16 Days in MS
+        const totalMs = 16 * 24 * 60 * 60 * 1000;
         const msPassed = Date.now() - appState.hitch.start;
-        
         const earned = (msPassed / totalMs) * totalNet;
         el.innerText = formatCurrencyWithCents(earned);
     }, 100);
@@ -345,26 +368,18 @@ function renderDashboard() {
         expenseTotals[e.category] += e.amount;
     });
     const sortedLeaks = Object.entries(expenseTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
-    
     const trueNetDaily = calculateTotalNetHitch() / 16;
 
     return `
         <div id="tab-dashboard" class="tab-content active space-y-6">
-            
             <div class="glass-panel p-6 text-center relative overflow-hidden ${appState.hitch.active ? 'shadow-[0_0_20px_rgba(59,130,246,0.2)] border-blue-500/30' : 'border-gray-500/30'}">
                 <div class="absolute top-0 left-0 w-full h-1 ${appState.hitch.active ? 'bg-gradient-to-r from-blue-400 to-purple-500' : 'bg-gray-600'}"></div>
-                
                 <div class="absolute top-2 right-3 flex items-center gap-2">
                     <span class="text-[10px] uppercase font-bold opacity-50">${appState.hitch.active ? 'On Hitch' : 'Off Hitch'}</span>
-                    <label class="switch">
-                        <input type="checkbox" onchange="toggleHitch(event)" ${appState.hitch.active ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
+                    <label class="switch"><input type="checkbox" onchange="toggleHitch(event)" ${appState.hitch.active ? 'checked' : ''}><span class="slider"></span></label>
                 </div>
-                
                 <p class="text-xs uppercase tracking-wider opacity-70 mb-1 mt-4">Hitch Taxi Meter</p>
                 <h2 id="live-grind-meter" class="text-4xl font-mono font-bold ${appState.hitch.active ? 'text-blue-400' : 'text-gray-400'} tracking-tight">$0.0000</h2>
-                
                 <p class="text-[10px] opacity-50 mt-2 font-mono">EARNING RATE: ${formatCurrency(trueNetDaily)} / DAY (NET)</p>
             </div>
             
@@ -378,22 +393,17 @@ function renderDashboard() {
                     <h3 class="font-bold flex items-center gap-2"><i data-lucide="tent-tree" class="text-green-500"></i> August Camping Trip</h3>
                     <button onclick="updateCampingTarget()" class="text-xs opacity-50 hover:opacity-100 transition"><i data-lucide="settings" class="w-4 h-4"></i></button>
                 </div>
-                
                 <div class="flex justify-between text-xs font-bold opacity-80 mb-2">
                     <span class="text-green-400">${formatCurrency(appState.camping.saved)} Saved</span>
                     <span>${formatCurrency(appState.camping.target)} Goal</span>
                 </div>
-                
                 <div class="relative w-full h-6 bg-black/20 dark:bg-black/40 rounded-full overflow-visible mb-6 border border-white/5 shadow-inner">
                     <div class="absolute top-0 left-0 h-full bg-green-500/80 rounded-full transition-all duration-1000 ease-out" style="width: ${campPercent}%"></div>
                     <div class="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out flex items-center justify-center bg-[#1e293b] rounded-full p-1 shadow-lg border border-gray-600" style="left: calc(${campPercent}% - 16px);">
                         <i data-lucide="truck" class="w-5 h-5 text-red-500"></i>
                     </div>
-                    <div class="absolute top-1/2 -translate-y-1/2 right-1 opacity-50">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-white"></i>
-                    </div>
+                    <div class="absolute top-1/2 -translate-y-1/2 right-1 opacity-50"><i data-lucide="map-pin" class="w-4 h-4 text-white"></i></div>
                 </div>
-                
                 <button onclick="addCampingFunds()" class="w-full bg-green-600/20 hover:bg-green-600/40 text-green-100 border border-green-500/30 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm shadow-sm active:scale-95">
                     <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Cash to Trail Fund
                 </button>
@@ -425,28 +435,20 @@ function renderDashboard() {
                         const highest = sortedLeaks[0][1];
                         const width = (leak[1] / highest) * 100;
                         const colorClass = idx === 0 ? 'bg-red-500' : (idx === 1 ? 'bg-orange-500' : 'bg-blue-500');
-                        return `
-                        <div>
-                            <div class="flex justify-between text-xs font-bold mb-1"><span>${leak[0]}</span><span>${formatCurrency(leak[1])}</span></div>
-                            <div class="w-full h-2 bg-black/20 dark:bg-black/40 rounded-full overflow-hidden">
-                                <div class="h-full ${colorClass} rounded-full" style="width: ${width}%"></div>
-                            </div>
-                        </div>`
+                        return `<div><div class="flex justify-between text-xs font-bold mb-1"><span>${leak[0]}</span><span>${formatCurrency(leak[1])}</span></div><div class="w-full h-2 bg-black/20 dark:bg-black/40 rounded-full overflow-hidden"><div class="h-full ${colorClass} rounded-full" style="width: ${width}%"></div></div></div>`
                     }).join('')}
                 </div>
             </div>` : ''}
+            <div><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i data-lucide="brain-circuit"></i> AI Insights</h3>${generateInsights()}</div>
         </div>`;
 }
 
 function executePaydayRush(period) {
     const billsToPay = appState.bills.filter(b => b.period === period && !b.paid);
     if(billsToPay.length === 0) return alert(`All bills for Period ${period} are already paid!`);
-    
     const total = billsToPay.reduce((s, b) => s + b.amount, 0);
     const mainAccount = appState.accounts.find(a => a.id === 1); 
-    
     const isSure = confirm(`EXECUTE PAYDAY RUSH - PERIOD ${period}\n\nThis will instantly deduct ${formatCurrency(total)} from your ${mainAccount.name} and check off ${billsToPay.length} bills.\n\nProceed?`);
-    
     if(isSure) {
         billsToPay.forEach(b => b.paid = true);
         if(mainAccount) mainAccount.balance -= total;
@@ -489,23 +491,12 @@ function renderBills() {
                     <div><h2 class="text-xl font-bold text-blue-500 dark:text-blue-400">Period ${periodNum}</h2></div>
                     <div class="text-right"><p class="text-sm opacity-70">Remaining</p><p class="text-lg font-bold">${formatCurrency(remaining)}</p></div>
                 </div>
-                
-                ${remaining > 0 ? `
-                <button onclick="executePaydayRush(${periodNum})" class="w-full mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
-                    <i data-lucide="zap"></i> Execute Period ${periodNum} Payday
-                </button>
-                ` : ''}
-
+                ${remaining > 0 ? `<button onclick="executePaydayRush(${periodNum})" class="w-full mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="zap"></i> Execute Period ${periodNum} Payday</button>` : ''}
                 <div class="space-y-3">
                     ${periodBills.map(b => `
                         <div class="flex items-center justify-between p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition">
-                            <label class="flex items-center gap-3 cursor-pointer flex-grow">
-                                <div class="checkbox-wrapper"><input type="checkbox" ${b.paid ? 'checked' : ''} onchange="toggleBill('${b.id}')"><span class="checkmark"></span></div>
-                                <div class="flex flex-col"><span class="${b.paid ? 'line-through opacity-50' : 'font-medium'}">${b.name}</span><span class="text-[10px] opacity-60">Due: ${b.dueDate ? b.dueDate : 'N/A'}</span></div>
-                            </label>
-                            <div class="flex items-center gap-2 pl-2"><span class="font-medium mr-2 ${b.paid ? 'opacity-50 line-through' : ''}">${formatCurrency(b.amount)}</span>
-                                <button onclick="editBill('${b.id}')" class="text-blue-400 p-1"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteBill('${b.id}')" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </div>
+                            <label class="flex items-center gap-3 cursor-pointer flex-grow"><div class="checkbox-wrapper"><input type="checkbox" ${b.paid ? 'checked' : ''} onchange="toggleBill('${b.id}')"><span class="checkmark"></span></div><div class="flex flex-col"><span class="${b.paid ? 'line-through opacity-50' : 'font-medium'}">${b.name}</span><span class="text-[10px] opacity-60">Due: ${b.dueDate ? b.dueDate : 'N/A'}</span></div></label>
+                            <div class="flex items-center gap-2 pl-2"><span class="font-medium mr-2 ${b.paid ? 'opacity-50 line-through' : ''}">${formatCurrency(b.amount)}</span><button onclick="editBill('${b.id}')" class="text-blue-400 p-1"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteBill('${b.id}')" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
                         </div>`).join('')}
                 </div>
                 <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between text-sm"><span>Paid: <strong class="text-green-500">${formatCurrency(paid)}</strong></span><span>Total: <strong>${formatCurrency(total)}</strong></span></div>
@@ -522,17 +513,13 @@ function keypadPress(val) {
 }
 
 window.pendingExpense = null;
-
 function saveExpense() {
     const amt = parseFloat(appState.keypadAmount);
     if(amt > 0) {
-        // True Net Hourly based on Dayforce stub ($7780.31 / 192 hours)
         const netHourly = 40.52; 
         const hoursAdded = (amt / netHourly).toFixed(1);
-        
         const msgDiv = document.getElementById('logan-msg');
         msgDiv.innerHTML = `Yo! Are you sure you wanna drop <strong>${formatCurrency(amt)}</strong> right now?<br><br>That's <strong>${hoursAdded} hours</strong> of sweating on the rig. Shouldn't we be putting that cash toward the August camping trip?`;
-        
         window.pendingExpense = amt;
         document.getElementById('logan-modal').classList.remove('hidden');
     }
@@ -548,8 +535,7 @@ function confirmLogan(isSure) {
         setTimeout(() => { btn.innerHTML = ogText; btn.classList.remove('bg-green-500'); if (typeof lucide !== 'undefined') lucide.createIcons(); document.getElementById('keypad-display').innerText = '$0'; }, 1500);
     } else if (!isSure && window.pendingExpense) {
         appState.camping.saved += window.pendingExpense;
-        appState.keypadAmount = "0"; 
-        saveState();
+        appState.keypadAmount = "0"; saveState();
         document.getElementById('keypad-display').innerText = '$0';
         switchTab('dashboard'); 
     }
@@ -557,13 +543,11 @@ function confirmLogan(isSure) {
 }
 
 function changeCategory(e) { appState.keypadCategory = e.target.value; }
-
 function renderKeypad() {
     if(!appState) return '';
     return `<div id="tab-keypad" class="tab-content flex flex-col h-[calc(100vh-140px)]"><div class="glass-panel p-4 mb-4 flex-shrink-0"><select onchange="changeCategory(event)" class="glass-input w-full text-lg font-medium text-center appearance-none mb-4">${appState.categories.map(c => `<option value="${c}" ${appState.keypadCategory === c ? 'selected' : ''}>${c}</option>`).join('')}</select><div id="keypad-display" class="text-6xl font-bold text-center tracking-tighter py-4">$${appState.keypadAmount}</div></div><div class="grid grid-cols-3 gap-3 flex-grow">${[1,2,3,4,5,6,7,8,9,'.',0,'DEL'].map(k => `<button onclick="keypadPress('${k}')" class="keypad-btn">${k === 'DEL' ? '<i data-lucide="delete"></i>' : k}</button>`).join('')}</div><div class="mt-3 flex-shrink-0"><button id="save-expense-btn" onclick="saveExpense()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition text-xl flex justify-center items-center gap-2"><i data-lucide="cloud-upload"></i> Sync Expense</button></div></div>`;
 }
 
-// CALENDAR & PAY STUB SIMULATOR
 function updatePayConfig(field) {
     const el = document.getElementById(field);
     if(el && !isNaN(el.value)) { appState.payConfig[field] = parseFloat(el.value); saveState(); }
@@ -578,12 +562,10 @@ function toggleWorkDay(day) {
 
 function renderCalendar() {
     if(!appState) return '';
-    
     const totalDays = appState.payConfig.workDays.length;
     const grossPay = totalDays * appState.payConfig.grossDaily;
     const taxDeduction = grossPay * (appState.payConfig.taxRate / 100);
     const reimbursements = totalDays * appState.payConfig.dailyReimbursements;
-    // Apply fixed deductions only if days > 0
     const fixedDed = totalDays > 0 ? appState.payConfig.fixedDeductions : 0;
     const netPay = grossPay - taxDeduction - fixedDed + reimbursements;
     
@@ -598,43 +580,22 @@ function renderCalendar() {
         const isToday = i === today.getDate();
         const isWorkDay = appState.payConfig.workDays.includes(i);
         const dayBills = appState.bills.filter(b => b.dueDate === i);
-        
         let indicator = '';
         if(dayBills.some(b => !b.paid)) indicator = `<div class="absolute bottom-1 w-2 h-2 rounded-full bg-red-400"></div>`; 
         else if(dayBills.some(b => b.paid)) indicator = `<div class="absolute bottom-1 w-2 h-2 rounded-full bg-green-500"></div>`;
-        
-        grid += `
-        <div onclick="toggleWorkDay(${i})" class="aspect-square glass-panel flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-all ${isWorkDay ? 'bg-orange-500/30 border-orange-500/50 text-orange-200 shadow-inner' : ''} ${isToday ? 'ring-2 ring-blue-500' : ''}">
-            <span class="text-sm font-bold">${i}</span>
-            ${indicator}
-        </div>`;
+        grid += `<div onclick="toggleWorkDay(${i})" class="aspect-square glass-panel flex flex-col items-center justify-center relative cursor-pointer active:scale-90 transition-all ${isWorkDay ? 'bg-orange-500/30 border-orange-500/50 text-orange-200 shadow-inner' : ''} ${isToday ? 'ring-2 ring-blue-500' : ''}"><span class="text-sm font-bold">${i}</span>${indicator}</div>`;
     }
     
     return `
     <div id="tab-calendar" class="tab-content space-y-6">
-        
         <div class="glass-panel p-4 bg-black/10">
             <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="file-spreadsheet" class="text-blue-400"></i> Dayforce Forecaster</h2>
-            
             <div class="grid grid-cols-2 gap-3 mb-4">
-                <div>
-                    <label class="text-xs opacity-70 block mb-1">Gross / Day ($)</label>
-                    <input type="number" id="grossDaily" class="glass-input text-sm font-bold" value="${appState.payConfig.grossDaily}" onchange="updatePayConfig('grossDaily')">
-                </div>
-                <div>
-                    <label class="text-xs opacity-70 block mb-1">Est. Tax Bracket (%)</label>
-                    <input type="number" id="taxRate" class="glass-input text-sm font-bold" value="${appState.payConfig.taxRate}" onchange="updatePayConfig('taxRate')">
-                </div>
-                <div>
-                    <label class="text-xs opacity-70 block mb-1">Per Diem / Day ($)</label>
-                    <input type="number" id="dailyReimbursements" class="glass-input text-sm font-bold" value="${appState.payConfig.dailyReimbursements}" onchange="updatePayConfig('dailyReimbursements')">
-                </div>
-                <div>
-                    <label class="text-xs opacity-70 block mb-1">Fixed Benefits ($)</label>
-                    <input type="number" id="fixedDeductions" class="glass-input text-sm font-bold" value="${appState.payConfig.fixedDeductions}" onchange="updatePayConfig('fixedDeductions')">
-                </div>
+                <div><label class="text-xs opacity-70 block mb-1">Gross / Day ($)</label><input type="number" id="grossDaily" class="glass-input text-sm font-bold" value="${appState.payConfig.grossDaily}" onchange="updatePayConfig('grossDaily')"></div>
+                <div><label class="text-xs opacity-70 block mb-1">Est. Tax Bracket (%)</label><input type="number" id="taxRate" class="glass-input text-sm font-bold" value="${appState.payConfig.taxRate}" onchange="updatePayConfig('taxRate')"></div>
+                <div><label class="text-xs opacity-70 block mb-1">Per Diem / Day ($)</label><input type="number" id="dailyReimbursements" class="glass-input text-sm font-bold" value="${appState.payConfig.dailyReimbursements}" onchange="updatePayConfig('dailyReimbursements')"></div>
+                <div><label class="text-xs opacity-70 block mb-1">Fixed Benefits ($)</label><input type="number" id="fixedDeductions" class="glass-input text-sm font-bold" value="${appState.payConfig.fixedDeductions}" onchange="updatePayConfig('fixedDeductions')"></div>
             </div>
-            
             <div class="bg-black/30 dark:bg-black/50 p-4 rounded-xl border border-white/5 space-y-2 font-mono text-sm">
                 <div class="flex justify-between font-bold opacity-90 border-b border-white/10 pb-2 mb-2"><span>Total Scheduled:</span> <span>${totalDays} Days</span></div>
                 <div class="flex justify-between opacity-80"><span>Earnings (Gross):</span> <span>${formatCurrency(grossPay)}</span></div>
@@ -644,16 +605,9 @@ function renderCalendar() {
                 <hr class="border-white/10 my-2">
                 <div class="flex justify-between text-blue-400 font-bold text-lg"><span>Net Take-Home:</span> <span>${formatCurrency(netPay)}</span></div>
             </div>
-            
             <p class="text-[10px] text-center text-orange-300 opacity-80 mt-3 font-bold">*Tap days on the calendar below to mark them as Hitch days.</p>
         </div>
-
-        <div class="glass-panel p-4">
-            <div class="grid grid-cols-7 gap-2">
-                ${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}
-                ${grid}
-            </div>
-        </div>
+        <div class="glass-panel p-4"><div class="grid grid-cols-7 gap-2">${['S','M','T','W','T','F','S'].map(d => `<div class="text-center text-xs opacity-50 font-bold pb-2">${d}</div>`).join('')}${grid}</div></div>
     </div>`;
 }
 
@@ -671,7 +625,6 @@ function addGarageGoal() {
     const target = parseFloat(prompt("How much does it cost? ($)"));
     if(target > 0) { appState.garage.push({ id: 'g_' + Date.now(), name, target, saved: 0 }); saveState(); }
 }
-
 function fundGarageGoal(id) {
     const goal = appState.garage.find(g => g.id === id);
     if(goal) {
@@ -693,69 +646,32 @@ function renderWealth() {
 
     return `
     <div id="tab-wealth" class="tab-content space-y-6 pb-10">
-        
         <div class="glass-panel p-4 border-yellow-500/30 bg-gradient-to-br from-transparent to-yellow-900/10">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="wrench" class="text-yellow-500"></i> The Garage</h2>
-                <button onclick="addGarageGoal()" class="text-xs font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full"><i data-lucide="plus" class="w-3 h-3 inline"></i> New Part</button>
-            </div>
-            
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="wrench" class="text-yellow-500"></i> The Garage</h2><button onclick="addGarageGoal()" class="text-xs font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full"><i data-lucide="plus" class="w-3 h-3 inline"></i> New Part</button></div>
             <div class="space-y-5">
                 ${appState.garage.map(g => {
                     let pct = (g.saved / g.target) * 100; if (pct > 100) pct = 100;
-                    return `
-                    <div class="cursor-pointer active:scale-95 transition" onclick="fundGarageGoal('${g.id}')">
-                        <div class="flex justify-between text-sm font-bold mb-1">
-                            <span>${g.name}</span>
-                            <span class="text-yellow-400">${formatCurrency(g.saved)} / ${formatCurrency(g.target)}</span>
-                        </div>
-                        <div class="relative w-full h-4 bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
-                            <div class="absolute top-0 left-0 h-full bg-yellow-500 transition-all duration-700" style="width: ${pct}%"></div>
-                            ${pct === 100 ? `<div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black uppercase tracking-widest">Ready to Order</div>` : ''}
-                        </div>
-                    </div>`
+                    return `<div class="cursor-pointer active:scale-95 transition" onclick="fundGarageGoal('${g.id}')"><div class="flex justify-between text-sm font-bold mb-1"><span>${g.name}</span><span class="text-yellow-400">${formatCurrency(g.saved)} / ${formatCurrency(g.target)}</span></div><div class="relative w-full h-4 bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner"><div class="absolute top-0 left-0 h-full bg-yellow-500 transition-all duration-700" style="width: ${pct}%"></div>${pct === 100 ? `<div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black uppercase tracking-widest">Ready to Order</div>` : ''}</div></div>`
                 }).join('')}
             </div>
         </div>
-
         <div class="glass-panel p-4 bg-blue-500/10 border-blue-500/30">
             <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="target"></i> Snowball Attack Plan</h3>
-            <div class="text-sm space-y-2">
-                <div class="flex justify-between"><span>Total Debt:</span> <strong>${formatCurrency(totalDebt)}</strong></div>
-                <div class="flex justify-between"><span>Free Income (After Bills):</span> <strong>${formatCurrency(remainingIncome)}</strong></div>
-                <hr class="border-white/10 my-3">
-                <p class="leading-relaxed opacity-90">If you use <strong>${suggestedPercent}%</strong> of your free cash (${formatCurrency(suggestedCheck)} per check) to attack the lowest balances first...</p>
-                <div class="text-center bg-black/20 dark:bg-black/40 p-3 rounded-lg mt-3 shadow-inner">
-                    <span class="text-green-500 font-bold block text-lg">Debt Free in ${checksToZero} Paychecks!</span>
-                </div>
-            </div>
+            <div class="text-sm space-y-2"><div class="flex justify-between"><span>Total Debt:</span> <strong>${formatCurrency(totalDebt)}</strong></div><div class="flex justify-between"><span>Free Income (After Bills):</span> <strong>${formatCurrency(remainingIncome)}</strong></div><hr class="border-white/10 my-3"><p class="leading-relaxed opacity-90">If you use <strong>${suggestedPercent}%</strong> of your free cash (${formatCurrency(suggestedCheck)} per check) to attack the lowest balances first...</p><div class="text-center bg-black/20 dark:bg-black/40 p-3 rounded-lg mt-3 shadow-inner"><span class="text-green-500 font-bold block text-lg">Debt Free in ${checksToZero} Paychecks!</span></div></div>
         </div>
-
         <div class="glass-panel p-4">
             <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="flame"></i> Active Debts</h2>
             <div class="space-y-3 mb-6">
-                ${sortedDebts.map((d, index) => `
-                    <div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
-                        ${index === 0 ? '<div class="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-md">CURRENT TARGET</div>' : ''}
-                        <div class="flex justify-between font-bold"><span>${d.name}</span><span>${formatCurrency(d.balance)}</span></div>
-                        <div class="flex justify-between text-xs opacity-70 mt-1"><span>Min: ${formatCurrency(d.minPayment)}</span><span>Rate: ${d.interest}%</span></div>
-                    </div>
-                `).join('')}
+                ${sortedDebts.map((d, index) => `<div class="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">${index === 0 ? '<div class="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold shadow-md">CURRENT TARGET</div>' : ''}<div class="flex justify-between font-bold"><span>${d.name}</span><span>${formatCurrency(d.balance)}</span></div><div class="flex justify-between text-xs opacity-70 mt-1"><span>Min: ${formatCurrency(d.minPayment)}</span><span>Rate: ${d.interest}%</span></div></div>`).join('')}
             </div>
-            
             <h3 class="font-bold text-sm mb-2 mt-6 border-t pt-4">Add Debt</h3>
-            <div class="grid grid-cols-2 gap-2 mb-2">
-                <input type="text" id="new-debt-name" placeholder="Name" class="glass-input col-span-2 text-sm">
-                <input type="number" id="new-debt-balance" placeholder="Balance" class="glass-input text-sm">
-                <input type="number" id="new-debt-int" placeholder="Interest %" class="glass-input text-sm">
-                <input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm">
-            </div>
-            <button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button>
+            <div class="grid grid-cols-2 gap-2 mb-2"><input type="text" id="new-debt-name" placeholder="Name" class="glass-input col-span-2 text-sm"><input type="number" id="new-debt-balance" placeholder="Balance" class="glass-input text-sm"><input type="number" id="new-debt-int" placeholder="Interest %" class="glass-input text-sm"><input type="number" id="new-debt-min" placeholder="Min Payment" class="glass-input col-span-2 text-sm"></div><button onclick="addNewDebt()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl mt-2 text-sm">Save Debt</button>
         </div>
     </div>`;
 }
 
-function renderApp() {
+// BIND ALL FUNCTIONS GLOBALLY SO UI BUTTONS ALWAYS WORK
+window.renderApp = function() {
     if(!appState) return;
     document.getElementById('app-container').innerHTML = `${renderDashboard()}${renderBills()}${renderKeypad()}${renderCalendar()}${renderWealth()}`;
     if (typeof lucide !== 'undefined') { lucide.createIcons(); }
@@ -767,6 +683,7 @@ function renderApp() {
 
 window.toggleTheme = toggleTheme; window.switchTab = switchTab; window.toggleBill = toggleBill; window.deleteBill = deleteBill; window.editBill = editBill; window.cancelEditBill = cancelEditBill; window.submitBill = submitBill; window.keypadPress = keypadPress; window.saveExpense = saveExpense; window.changeCategory = changeCategory; window.addNewDebt = addNewDebt; window.editAccount = editAccount; window.updateCampingTarget = updateCampingTarget; window.addCampingFunds = addCampingFunds; window.confirmLogan = confirmLogan; window.executePaydayRush = executePaydayRush; window.addGarageGoal = addGarageGoal; window.fundGarageGoal = fundGarageGoal; window.updatePayConfig = updatePayConfig; window.toggleWorkDay = toggleWorkDay; window.toggleHitch = toggleHitch;
 
+// INITIATE DYNAMIC DOWNLOAD
 initCloudState();
 </script>
 </body>
