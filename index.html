@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumina Finance</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <script>
@@ -16,7 +18,7 @@
                             dark: '#0f2027',
                             mid: '#203a43',
                             light: '#2c5364',
-                            accent: '#10b981' // Emerald 500
+                            accent: '#10b981'
                         }
                     },
                     fontFamily: {
@@ -37,7 +39,6 @@
             touch-action: manipulation;
         }
 
-        /* Glassmorphism Panel Utility */
         .glass-panel {
             background: rgba(30, 41, 59, 0.6);
             backdrop-filter: blur(16px);
@@ -46,22 +47,15 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
 
-        /* Hide scrollbar but keep functionality */
-        ::-webkit-scrollbar {
-            display: none;
-        }
+        ::-webkit-scrollbar { display: none; }
         
-        /* Keypad button press animation */
         .key-press:active {
             transform: scale(0.95);
             background: rgba(255,255,255,0.2);
         }
 
-        .pb-safe {
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
 
-        /* iMessage Tail */
         .message-tail {
             position: absolute;
             bottom: 0;
@@ -86,8 +80,10 @@
 </head>
 <body class="text-white min-h-screen font-sans antialiased overflow-x-hidden selection:bg-brand-accent selection:text-white">
 
+    <!-- Main Content Mount -->
     <main id="app-content" class="pb-32 pt-6 px-4 max-w-lg mx-auto min-h-screen"></main>
 
+    <!-- Fixed Bottom Navigation -->
     <nav class="fixed bottom-0 w-full glass-panel border-t border-white/10 z-50 rounded-t-3xl pb-safe">
         <div class="flex justify-around items-end max-w-lg mx-auto px-2 pt-2 pb-2 relative">
             <button onclick="window.switchTab('dash')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="dash">
@@ -100,6 +96,7 @@
                 <span class="text-[10px] font-medium tracking-wide">Bills</span>
             </button>
 
+            <!-- Emphasized Keypad Button -->
             <div class="relative w-16 flex justify-center h-full">
                 <button onclick="window.switchTab('keypad')" class="absolute bottom-4 w-16 h-16 bg-brand-accent rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-[#203a43] text-white transform transition-transform active:scale-95 z-50">
                     <i data-lucide="calculator" class="w-7 h-7"></i>
@@ -111,21 +108,23 @@
                 <span class="text-[10px] font-medium tracking-wide">Plan</span>
             </button>
 
-            <button onclick="window.switchTab('debt')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="garage">
+            <button onclick="window.switchTab('garage')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="garage">
                 <i data-lucide="car-front" class="w-6 h-6 mb-1"></i>
                 <span class="text-[10px] font-medium tracking-wide">Garage</span>
             </button>
         </div>
     </nav>
 
+    <!-- Global Fullscreen Loader -->
     <div id="loader" class="fixed inset-0 bg-[#0f2027] z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
         <i data-lucide="loader-2" class="w-12 h-12 text-brand-accent animate-spin mb-4"></i>
         <h1 class="text-2xl font-light tracking-widest text-white">LUMINA</h1>
     </div>
 
+    <!-- Application Logic -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // ----------------------------------------------------
@@ -148,7 +147,6 @@
                 workDays: []
             },
             bills: [
-                // Period 1
                 { id: "b1", name: "Internet", amount: 185.00, period: 1, paid: false },
                 { id: "b2", name: "Phone - Rogers", amount: 436.00, period: 1, paid: false },
                 { id: "b3", name: "Easy Home", amount: 150.00, period: 1, paid: false },
@@ -159,14 +157,13 @@
                 { id: "b8", name: "Counseling", amount: 220.00, period: 1, paid: false },
                 { id: "b9", name: "Credit Cards", amount: 200.00, period: 1, paid: false },
                 { id: "b10", name: "Spring Financial", amount: 80.00, period: 1, paid: false },
-                { id: "b11", name: "Subscriptions (Netflix, Spotify, etc)", amount: 70.15, period: 1, paid: false },
-                // Period 2
+                { id: "b11", name: "Subscriptions", amount: 70.15, period: 1, paid: false },
                 { id: "b12", name: "Rent", amount: 2400.00, period: 2, paid: false },
                 { id: "b13", name: "Utilities - Water", amount: 137.00, period: 2, paid: false },
                 { id: "b14", name: "Utilities - ATCO", amount: 311.00, period: 2, paid: false },
                 { id: "b15", name: "Easy Home", amount: 150.00, period: 2, paid: false },
                 { id: "b16", name: "Truck/TD Loan", amount: 404.00, period: 2, paid: false },
-                { id: "b17", name: "Daycare - Both girls", amount: 473.00, period: 2, paid: false },
+                { id: "b17", name: "Daycare", amount: 473.00, period: 2, paid: false },
                 { id: "b18", name: "Child Support", amount: 545.50, period: 2, paid: false },
                 { id: "b19", name: "Spring Financial", amount: 80.00, period: 2, paid: false },
                 { id: "b20", name: "Student Loans", amount: 240.00, period: 2, paid: false }
@@ -177,54 +174,42 @@
                 { id: "d1", name: "TD Loan", balance: 12000, minPayment: 404 },
                 { id: "d4", name: "RIFCO", balance: 18000, minPayment: 600 }
             ],
-            goals: {
-                "August Camping Trip": { target: 1500, saved: 0 }
-            },
-            garage: {
-                "Ford 6.0L Bulletproof": { target: 6500, saved: 0 }
-            }
+            goals: { "August Camping Trip": { target: 1500, saved: 0 } },
+            garage: { "Ford 6.0L Bulletproof": { target: 6500, saved: 0 } }
         };
 
         // ----------------------------------------------------
-        // GLOBAL STATE & FIREBASE INIT
+        // GLOBAL STATE & FIREBASE INIT 
         // ----------------------------------------------------
         let state = null; 
         let currentTab = 'dash';
         let dbRef = null;
         
-        // Local UI State (Outside render loop, not synced to Firebase)
+        // Extended UI State for the new Expense Entry feature
         const uiState = {
             keypadValue: '0',
             showRealityCheck: false,
-            pendingExpenseAmount: 0
+            pendingExpenseAmount: 0,
+            expenseName: '',
+            expenseDate: new Date().toISOString().split('T')[0],
+            expensePeriod: 1
         };
 
-        // Firebase Auth & Init
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "",
-            authDomain: "dummy.firebaseapp.com",
-            projectId: "dummy-project",
-            storageBucket: "dummy.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123:web:123"
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8",
+            authDomain: "lumina-budget-68f2e.firebaseapp.com",
+            projectId: "lumina-budget-68f2e"
         };
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'lumina-local-dev';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Core Initialization
         const init = async () => {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
-                console.error("Authentication Error:", error);
-                // Fallback for local testing without Firebase configuration
+                console.error("Auth Error:", error);
                 state = JSON.parse(JSON.stringify(DEFAULT_STATE));
                 finishLoading();
             }
@@ -232,25 +217,22 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userId = user.uid;
-                dbRef = doc(db, 'artifacts', appId, 'users', userId, 'lumina_state', 'default');
-                
-                // Fetch or Seed Default Document
+                dbRef = doc(db, "budgetApp", "mainState");
                 try {
                     const docSnap = await getDoc(dbRef);
-                    if (!docSnap.exists()) {
-                        await setDoc(dbRef, DEFAULT_STATE);
-                    }
+                    if (!docSnap.exists()) await setDoc(dbRef, DEFAULT_STATE);
                     
-                    // The Single Source of Truth Subscription
                     onSnapshot(dbRef, (doc) => {
-                        state = doc.data();
-                        triggerRender();
-                    }, (err) => console.error("Snapshot error:", err));
-
+                        if(doc.exists()) {
+                            state = doc.data();
+                            triggerRender();
+                        }
+                    });
                     finishLoading();
                 } catch(e) {
                     console.error("Firestore Error:", e);
+                    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+                    finishLoading();
                 }
             }
         });
@@ -268,29 +250,19 @@
         // ----------------------------------------------------
         // UTILITY FUNCTIONS & MATH ENGINE
         // ----------------------------------------------------
-        const formatMoney = (amount) => {
-            return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
-        };
+        const formatMoney = (amount) => new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
 
         const calculateNetPay = () => {
             if(!state) return 0;
             const days = state.payConfig.workDays.length;
             if (days === 0) return 0;
-            
             const gross = days * state.payConfig.grossDaily;
             const taxFactor = 1 - (state.payConfig.taxRate / 100);
-            const reimbursements = days * state.payConfig.dailyReimbursements;
-            
-            // EXACT Formula provided in prompt
-            return (gross * taxFactor) - state.payConfig.fixedDeductions + reimbursements;
+            return (gross * taxFactor) - state.payConfig.fixedDeductions + (days * state.payConfig.dailyReimbursements);
         };
 
-        const calculateTotalBills = () => {
-            if(!state) return 0;
-            return state.bills.reduce((sum, bill) => sum + bill.amount, 0);
-        };
+        const calculateTotalBills = () => state ? state.bills.reduce((sum, bill) => sum + bill.amount, 0) : 0;
 
-        // Mutation Wrapper for Firebase updates
         const updateFirebaseState = async (newStateObj) => {
             if(dbRef && state) {
                 await setDoc(dbRef, newStateObj, { merge: true });
@@ -305,9 +277,7 @@
         // ----------------------------------------------------
         const triggerRender = () => {
             if (!state) return;
-            // ANTI-JANK RULE: Capture Scroll Position
             const scrollPos = window.scrollY;
-            
             const appDiv = document.getElementById('app-content');
             let html = '';
 
@@ -319,13 +289,9 @@
                 case 'garage': html = renderGarage(); break;
             }
 
-            // Append Reality Check Modal if active
             html += renderModals();
-
-            // Replace DOM Content
             appDiv.innerHTML = html;
             
-            // Update Active Nav Styles
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('text-brand-accent');
                 btn.classList.add('text-slate-400');
@@ -335,18 +301,13 @@
                 }
             });
 
-            // Re-bind Icons
             lucide.createIcons();
-
-            // ANTI-JANK RULE: Restore Scroll Position Instantly
             window.scrollTo(0, scrollPos);
         };
 
         // ----------------------------------------------------
         // RENDER MODULES
         // ----------------------------------------------------
-
-        // 1. DASHBOARD
         const renderDash = () => {
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
@@ -402,8 +363,7 @@
                     <div class="flex justify-between items-end mb-4">
                         <div>
                             <h3 class="text-lg font-semibold flex items-center gap-2">
-                                <i data-lucide="tent" class="w-5 h-5 text-amber-500"></i>
-                                August Camping
+                                <i data-lucide="tent" class="w-5 h-5 text-amber-500"></i> August Camping
                             </h3>
                             <p class="text-xs text-slate-400 mt-1">${formatMoney(camping.saved)} of ${formatMoney(camping.target)}</p>
                         </div>
@@ -412,15 +372,12 @@
                         </div>
                     </div>
                     <div class="h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5 shadow-inner relative">
-                        <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-accent to-emerald-400 rounded-full transition-all duration-1000 ease-out" style="width: ${campProgress}%">
-                            <div class="w-full h-full opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4=')]"></div>
-                        </div>
+                        <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-accent to-emerald-400 rounded-full transition-all duration-1000 ease-out" style="width: ${campProgress}%"></div>
                     </div>
                 </section>
             `;
         };
 
-        // 2. BILLS
         const renderBills = () => {
             const period1 = state.bills.filter(b => b.period === 1);
             const period2 = state.bills.filter(b => b.period === 2);
@@ -433,6 +390,7 @@
                         </div>
                         <div>
                             <p class="font-medium ${bill.paid ? 'text-slate-400 line-through' : 'text-white'}">${bill.name}</p>
+                            ${bill.date ? `<p class="text-xs text-slate-500">${bill.date}</p>` : ''}
                         </div>
                     </div>
                     <span class="font-semibold ${bill.paid ? 'text-slate-500' : 'text-slate-200'}">${formatMoney(bill.amount)}</span>
@@ -445,8 +403,7 @@
                 <section class="glass-panel rounded-3xl overflow-hidden mb-6">
                     <div class="p-4 bg-slate-900/40 border-b border-white/10 flex justify-between items-center">
                         <h2 class="text-lg font-semibold flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i>
-                            ${title}
+                            <i data-lucide="calendar" class="w-5 h-5 text-blue-400"></i> ${title}
                         </h2>
                         <span class="text-sm font-medium text-slate-300">Unpaid: ${formatMoney(totalUnpaid)}</span>
                     </div>
@@ -473,7 +430,6 @@
             `;
         };
 
-        // 3. KEYPAD
         const renderKeypad = () => {
             const displayVal = uiState.keypadValue === '0' ? '0.00' : (parseInt(uiState.keypadValue) / 100).toFixed(2);
             
@@ -482,27 +438,30 @@
                     <h1 class="text-xl font-bold tracking-tight text-white opacity-80">Expense Entry</h1>
                 </header>
 
-                <div class="glass-panel rounded-3xl p-8 mb-8 text-right flex flex-col justify-end min-h-[140px]">
-                    <span class="text-slate-400 text-sm font-medium mb-2 pr-2">Total Amount</span>
-                    <div class="text-6xl font-light text-white tracking-tighter overflow-hidden">
-                        $${displayVal}
+                <!-- New Data Inputs for the Receipt -->
+                <div class="glass-panel rounded-3xl p-5 mb-6">
+                    <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent">
+                    <div class="flex gap-3">
+                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
+                        <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
+                            <option value="1" ${uiState.expensePeriod === 1 ? 'selected' : ''}>Period 1 (1-15)</option>
+                            <option value="2" ${uiState.expensePeriod === 2 ? 'selected' : ''}>Period 2 (16-31)</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4 max-w-[320px] mx-auto mb-8">
+                <div class="glass-panel rounded-3xl p-6 mb-6 text-right flex flex-col justify-end min-h-[100px]">
+                    <div class="text-5xl font-light text-white tracking-tighter overflow-hidden">$${displayVal}</div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 max-w-[320px] mx-auto mb-6">
                     ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `
-                        <button onclick="window.keypadPress('${num}')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">
-                            ${num}
-                        </button>
+                        <button onclick="window.keypadPress('${num}')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">${num}</button>
                     `).join('')}
-                    <button onclick="window.keypadPress('00')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-xl font-medium shadow-sm transition-transform flex items-center justify-center">
-                        00
-                    </button>
-                    <button onclick="window.keypadPress('0')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">
-                        0
-                    </button>
-                    <button onclick="window.keypadPress('DEL')" class="key-press h-16 rounded-2xl bg-white/5 border border-white/10 text-lg font-medium shadow-sm transition-transform flex items-center justify-center text-red-400">
-                        <i data-lucide="delete" class="w-7 h-7"></i>
+                    <button onclick="window.keypadPress('00')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-xl font-medium shadow-sm transition-transform flex items-center justify-center">00</button>
+                    <button onclick="window.keypadPress('0')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">0</button>
+                    <button onclick="window.keypadPress('DEL')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-lg font-medium shadow-sm transition-transform flex items-center justify-center text-red-400">
+                        <i data-lucide="delete" class="w-6 h-6"></i>
                     </button>
                 </div>
 
@@ -514,7 +473,6 @@
             `;
         };
 
-        // 4. PLAN (Forecaster)
         const renderPlan = () => {
             const numDays = state.payConfig.workDays.length;
             const gross = numDays * state.payConfig.grossDaily;
@@ -523,14 +481,11 @@
             const fixed = state.payConfig.fixedDeductions;
             const net = calculateNetPay();
 
-            // 30 day grid logic
             let gridHtml = '';
             for(let i=1; i<=30; i++) {
                 const isSelected = state.payConfig.workDays.includes(i);
                 gridHtml += `
-                    <button onclick="window.toggleDay(${i})" class="aspect-square rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center border ${isSelected ? 'bg-brand-accent border-brand-accent text-white shadow-lg shadow-emerald-500/30 scale-105' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}">
-                        ${i}
-                    </button>
+                    <button onclick="window.toggleDay(${i})" class="aspect-square rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center border ${isSelected ? 'bg-brand-accent border-brand-accent text-white shadow-lg shadow-emerald-500/30 scale-105' : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'}">${i}</button>
                 `;
             }
 
@@ -545,26 +500,12 @@
                         <span class="text-slate-300">Days Scheduled</span>
                         <span class="font-bold text-white text-lg bg-slate-800 px-3 py-1 rounded-lg">${numDays}</span>
                     </div>
-                    
                     <div class="space-y-3 mb-4">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Gross Income</span>
-                            <span class="text-slate-200">${formatMoney(gross)}</span>
-                        </div>
-                        <div class="flex justify-between text-red-300/80">
-                            <span>Est. Tax (${state.payConfig.taxRate}%)</span>
-                            <span>-${formatMoney(tax)}</span>
-                        </div>
-                        <div class="flex justify-between text-red-300/80">
-                            <span>Fixed Deductions</span>
-                            <span>-${formatMoney(fixed)}</span>
-                        </div>
-                        <div class="flex justify-between text-brand-accent">
-                            <span>Reimbursements</span>
-                            <span>+${formatMoney(reimbursements)}</span>
-                        </div>
+                        <div class="flex justify-between"><span class="text-slate-400">Gross Income</span><span class="text-slate-200">${formatMoney(gross)}</span></div>
+                        <div class="flex justify-between text-red-300/80"><span>Est. Tax (${state.payConfig.taxRate}%)</span><span>-${formatMoney(tax)}</span></div>
+                        <div class="flex justify-between text-red-300/80"><span>Fixed Deductions</span><span>-${formatMoney(fixed)}</span></div>
+                        <div class="flex justify-between text-brand-accent"><span>Reimbursements</span><span>+${formatMoney(reimbursements)}</span></div>
                     </div>
-
                     <div class="flex justify-between items-center pt-4 border-t border-white/10 mt-2">
                         <span class="font-semibold text-slate-200">Net Take-Home</span>
                         <span class="font-bold text-xl text-brand-accent">${formatMoney(net)}</span>
@@ -582,13 +523,11 @@
             `;
         };
 
-        // 5. GARAGE (Wealth)
         const renderGarage = () => {
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
-            const surplus = Math.max(0, netPay - totalBills); // Free income
+            const surplus = Math.max(0, netPay - totalBills);
             
-            // Sort debts smallest to largest
             const sortedDebts = [...state.debts].sort((a,b) => a.balance - b.balance);
             const smallestDebt = sortedDebts[0];
             
@@ -659,10 +598,8 @@
             `;
         };
 
-        // Render Modals Overlay
         const renderModals = () => {
             if(!uiState.showRealityCheck) return '';
-            
             const amount = uiState.pendingExpenseAmount;
             
             return `
@@ -670,9 +607,7 @@
                     <div class="bg-[#1c1c1e] rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl transform scale-100 transition-transform duration-300 overflow-hidden">
                         
                         <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-slate-700/50">
-                            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                                FY
-                            </div>
+                            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">FY</div>
                             <div>
                                 <div class="font-bold text-white text-sm tracking-wide">Future You</div>
                                 <div class="text-blue-500 text-[10px] font-semibold">iMessage</div>
@@ -700,7 +635,7 @@
         };
 
         // ----------------------------------------------------
-        // EVENT HANDLERS (Attached to Window for inline HTML)
+        // EVENT HANDLERS
         // ----------------------------------------------------
         
         window.switchTab = (tab) => {
@@ -709,7 +644,6 @@
             triggerRender();
         };
 
-        // Plan Tab Interactions
         window.toggleDay = (day) => {
             let newDays = [...state.payConfig.workDays];
             if (newDays.includes(day)) {
@@ -717,16 +651,11 @@
             } else {
                 newDays.push(day);
             }
-            updateFirebaseState({
-                payConfig: { ...state.payConfig, workDays: newDays }
-            });
+            updateFirebaseState({ payConfig: { ...state.payConfig, workDays: newDays } });
         };
 
-        // Bills Tab Interactions
         window.toggleBill = (id) => {
-            const newBills = state.bills.map(b => 
-                b.id === id ? { ...b, paid: !b.paid } : b
-            );
+            const newBills = state.bills.map(b => b.id === id ? { ...b, paid: !b.paid } : b);
             updateFirebaseState({ bills: newBills });
         };
 
@@ -739,16 +668,20 @@
                 }
                 return b;
             });
-            
             const newRbcBalance = state.accounts["RBC Chequing"] - deductionAmount;
-            
             updateFirebaseState({
                 bills: newBills,
                 accounts: { ...state.accounts, "RBC Chequing": newRbcBalance }
             });
         };
 
-        // Keypad Interactions
+        // Update the Expense Form state dynamically
+        window.updateExpData = (field, val) => {
+            if(field === 'name') uiState.expenseName = val;
+            if(field === 'date') uiState.expenseDate = val;
+            if(field === 'period') uiState.expensePeriod = parseInt(val);
+        };
+
         window.keypadPress = (val) => {
             if (val === 'DEL') {
                 uiState.keypadValue = uiState.keypadValue.length > 1 ? uiState.keypadValue.slice(0, -1) : '0';
@@ -756,13 +689,10 @@
                 if (uiState.keypadValue === '0' && val !== '00') {
                     uiState.keypadValue = val;
                 } else if (uiState.keypadValue !== '0') {
-                    // Prevent insanely large numbers mapping to BigInt crash limit
-                    if(uiState.keypadValue.length < 8) {
-                        uiState.keypadValue += val;
-                    }
+                    if(uiState.keypadValue.length < 8) uiState.keypadValue += val;
                 }
             }
-            triggerRender(); // Re-render local state only, no firebase push
+            triggerRender();
         };
 
         window.submitExpense = () => {
@@ -774,19 +704,13 @@
                 uiState.showRealityCheck = true;
                 triggerRender();
             } else {
-                // Auto process small expenses
-                const newChequing = state.accounts["RBC Chequing"] - amount;
-                updateFirebaseState({
-                    accounts: { ...state.accounts, "RBC Chequing": newChequing }
-                });
-                uiState.keypadValue = '0';
-                currentTab = 'dash';
-                triggerRender();
+                // If it's small, skip the text message and just buy it
+                window.handleRealityCheck('spend_auto');
             }
         };
 
         window.handleRealityCheck = (choice) => {
-            const amount = uiState.pendingExpenseAmount;
+            const amount = uiState.pendingExpenseAmount > 0 ? uiState.pendingExpenseAmount : (parseInt(uiState.keypadValue) / 100);
             let updates = {};
 
             if (choice === 'save') {
@@ -799,21 +723,32 @@
                     }
                 };
             } else {
-                // Just spend it
+                // Spend it - Deduct from RBC AND add to the Bills list as a receipt!
+                const newBill = {
+                    id: 'exp_' + Date.now(),
+                    name: uiState.expenseName || 'Ad-hoc Expense',
+                    amount: amount,
+                    period: uiState.expensePeriod,
+                    paid: true, // Mark it as already paid so it doesn't add to unpaid totals
+                    date: uiState.expenseDate
+                };
+
                 updates = {
-                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount }
+                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
+                    bills: [...state.bills, newBill]
                 };
             }
 
+            // Reset UI
             uiState.showRealityCheck = false;
             uiState.pendingExpenseAmount = 0;
             uiState.keypadValue = '0';
-            currentTab = 'dash';
+            uiState.expenseName = ''; 
+            currentTab = 'bills'; // Jump to bills to show them the receipt
             
             updateFirebaseState(updates);
         };
 
-        // Initial Icon setup just in case
         document.addEventListener("DOMContentLoaded", () => {
             lucide.createIcons();
         });
