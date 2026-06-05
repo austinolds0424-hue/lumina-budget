@@ -205,6 +205,7 @@
             expensePeriod: 1,
             // New Edit States
             showEditModal: false,
+            showOilfieldModal: false,
             editType: '',
             editId: null,
             editName: '',
@@ -492,35 +493,38 @@
                 alert('Restore failed. The backup may be missing or invalid.');
             }
         };
-        window.openOilfieldSettings = () => {
-    const hitchLength = prompt(
-        "Hitch Length (14, 21, 24, 28)",
-        state.oilfield?.hitchLength || 24
-    );
+   window.openOilfieldSettings = () => {
+    uiState.showOilfieldModal = true;
+    triggerRender();
+};
 
-    const daysOff = prompt(
-        "Days Off (7, 14, 18)",
-        state.oilfield?.daysOff || 14
-    );
+window.closeOilfieldSettings = () => {
+    uiState.showOilfieldModal = false;
+    triggerRender();
+};
 
-    const loaDaily = prompt(
-        "LOA Per Day",
-        state.oilfield?.loaDaily || 85.72
-    );
-
-    if (!hitchLength || !daysOff || !loaDaily) return;
+window.saveOilfieldSettings = () => {
+    const hitchLength = Number(document.getElementById('oilfield-hitch-length').value);
+    const daysOff = Number(document.getElementById('oilfield-days-off').value);
+    const loaDaily = Number(document.getElementById('oilfield-loa-daily').value);
+    const travelPay = Number(document.getElementById('oilfield-travel-pay').value);
+    const bonusPay = Number(document.getElementById('oilfield-bonus-pay').value);
+    const hitchStart = document.getElementById('oilfield-hitch-start').value;
 
     updateFirebaseState({
         oilfield: {
             ...state.oilfield,
-            hitchLength: Number(hitchLength),
-            daysOff: Number(daysOff),
-            loaDaily: Number(loaDaily)
+            hitchLength,
+            daysOff,
+            loaDaily,
+            travelPay,
+            bonusPay,
+            hitchStart
         }
     });
-};
 
-        // ----------------------------------------------------
+    uiState.showOilfieldModal = false;
+};        // ----------------------------------------------------
         // THE ANTI-JANK RENDER ENGINE
         // ----------------------------------------------------
         const triggerRender = () => {
@@ -1146,7 +1150,79 @@ const projectedHitchPay =
                 `;
             }
 
-            return html;
+        if (uiState.showOilfieldModal) {
+    const oilfield = state.oilfield || {
+        hitchStart: "",
+        hitchLength: 24,
+        daysOff: 14,
+        loaDaily: 85.72,
+        travelPay: 0,
+        bonusPay: 0
+    };
+
+    html += `
+        <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl">
+            <div class="glass-panel rounded-3xl w-full max-w-sm border border-slate-600 p-6 shadow-2xl">
+                <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                    <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
+                    Oilfield Settings
+                </h3>
+                <p class="text-xs text-slate-400 mb-5">Set your hitch schedule and pay extras.</p>
+
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Length</label>
+                        <select id="oilfield-hitch-length" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                            <option value="14" ${oilfield.hitchLength == 14 ? 'selected' : ''}>14 Days</option>
+                            <option value="21" ${oilfield.hitchLength == 21 ? 'selected' : ''}>21 Days</option>
+                            <option value="24" ${oilfield.hitchLength == 24 ? 'selected' : ''}>24 Days</option>
+                            <option value="28" ${oilfield.hitchLength == 28 ? 'selected' : ''}>28 Days</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Days Off</label>
+                        <select id="oilfield-days-off" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                            <option value="7" ${oilfield.daysOff == 7 ? 'selected' : ''}>7 Days</option>
+                            <option value="14" ${oilfield.daysOff == 14 ? 'selected' : ''}>14 Days</option>
+                            <option value="18" ${oilfield.daysOff == 18 ? 'selected' : ''}>18 Days</option>
+                            <option value="21" ${oilfield.daysOff == 21 ? 'selected' : ''}>21 Days</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Start Date</label>
+                        <input id="oilfield-hitch-start" type="date" value="${oilfield.hitchStart || ''}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">LOA Per Day</label>
+                        <input id="oilfield-loa-daily" type="number" step="0.01" value="${oilfield.loaDaily}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Travel Pay</label>
+                        <input id="oilfield-travel-pay" type="number" step="0.01" value="${oilfield.travelPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Bonus Pay</label>
+                        <input id="oilfield-bonus-pay" type="number" step="0.01" value="${oilfield.bonusPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="window.closeOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700">
+                        Cancel
+                    </button>
+                    <button onclick="window.saveOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-brand-accent text-white font-bold">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}    return html;
         };
 
         // ----------------------------------------------------
