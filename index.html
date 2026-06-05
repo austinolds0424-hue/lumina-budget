@@ -257,10 +257,20 @@
         const calculateTotalBills = () => state ? state.bills.reduce((sum, bill) => sum + bill.amount, 0) : 0;
 
         const updateFirebaseState = async (newStateObj) => {
-            state = { ...state, ...newStateObj };
-            saveLocalState();
-            triggerRender();
-        };
+    state = { ...state, ...newStateObj };
+
+    saveLocalState();
+
+    try {
+        if (googleAccessToken) {
+            await window.backupToGoogleDrive();
+        }
+    } catch (error) {
+        console.error('Auto backup failed:', error);
+    }
+
+    triggerRender();
+};
 
         // ----------------------------------------------------
         // GOOGLE DRIVE BACKUP / RESTORE
