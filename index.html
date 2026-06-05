@@ -5,7 +5,6 @@
     <meta name="theme-color" content="#10b981">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumina Finance</title>
@@ -14,21 +13,17 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <script>
-        tailwind.config = {
-            theme: { extend: { colors: { brand: { dark: '#0f2027', mid: '#203a43', light: '#2c5364', accent: '#10b981' } } }, fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'], } }
-        }
+        tailwind.config = { theme: { extend: { colors: { brand: { dark: '#0f2027', mid: '#203a43', light: '#2c5364', accent: '#10b981' } } }, fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'], } } }
     </script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); background-attachment: fixed; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
         ::-webkit-scrollbar { display: none; }
         .key-press:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
         .message-tail { position: absolute; bottom: 0; left: -8px; width: 20px; height: 20px; background-color: #26252a; border-bottom-right-radius: 16px; z-index: -1; }
         .message-tail::after { content: ""; position: absolute; bottom: 0; left: -10px; width: 20px; height: 20px; background-color: #1c1c1e; border-bottom-right-radius: 16px; }
-        /* Voice Pulse Animation */
         @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
         .listening { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; background-color: #10b981 !important; color: white !important; }
     </style>
@@ -39,27 +34,11 @@
 
     <nav class="fixed bottom-0 w-full glass-panel border-t border-white/10 z-50 rounded-t-3xl pb-safe">
         <div class="flex justify-around items-end max-w-lg mx-auto px-2 pt-2 pb-2 relative">
-            <button onclick="window.switchTab('dash')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="dash">
-                <i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium tracking-wide">Dash</span>
-            </button>
-            <button onclick="window.switchTab('bills')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="bills">
-                <i data-lucide="receipt" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium tracking-wide">Bills</span>
-            </button>
-            <div class="relative w-16 flex justify-center h-full">
-                <button onclick="window.switchTab('keypad')" class="absolute bottom-4 w-16 h-16 bg-brand-accent rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-[#203a43] text-white transform transition-transform active:scale-95 z-50">
-                    <i data-lucide="calculator" class="w-7 h-7"></i>
-                </button>
-            </div>
-            <button onclick="window.switchTab('plan')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="plan">
-                <i data-lucide="calendar-days" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium tracking-wide">Plan</span>
-            </button>
-            <button onclick="window.switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="wealth">
-                <i data-lucide="landmark" class="w-6 h-6 mb-1"></i>
-                <span class="text-[10px] font-medium tracking-wide">Accounts</span>
-            </button>
+            <button onclick="window.switchTab('dash')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="dash"><i data-lucide="layout-dashboard" class="w-6 h-6 mb-1"></i><span class="text-[10px] font-medium tracking-wide">Dash</span></button>
+            <button onclick="window.switchTab('bills')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="bills"><i data-lucide="receipt" class="w-6 h-6 mb-1"></i><span class="text-[10px] font-medium tracking-wide">Bills</span></button>
+            <div class="relative w-16 flex justify-center h-full"><button onclick="window.switchTab('keypad')" class="absolute bottom-4 w-16 h-16 bg-brand-accent rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-[#203a43] text-white transform transition-transform active:scale-95 z-50"><i data-lucide="calculator" class="w-7 h-7"></i></button></div>
+            <button onclick="window.switchTab('plan')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="plan"><i data-lucide="calendar-days" class="w-6 h-6 mb-1"></i><span class="text-[10px] font-medium tracking-wide">Plan</span></button>
+            <button onclick="window.switchTab('wealth')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="wealth"><i data-lucide="landmark" class="w-6 h-6 mb-1"></i><span class="text-[10px] font-medium tracking-wide">Accounts</span></button>
         </div>
     </nav>
 
@@ -69,28 +48,24 @@
     </div>
 
     <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
         const DEFAULT_STATE = {
-            accounts: { "RBC Chequing": 2500, "RBC Savings": 10000, "Wealthsimple TFSA": 0, "Wealthsimple RRSP": 0 },
-            payConfig: { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] },
+            accounts: { "RBC Chequing": 2500, "RBC Savings": 10000, "Wealthsimple TFSA": 0, "Wealthsimple RRSP": 0, "NEO": 350 },
+            payConfig: { baseDaily: 500, taxRate: 32, campDaily: 60, truckDaily: 75, kmRate: 0.66, kmsDriven: 0, workDays: [] },
             bills: [
                 { id: "b1", name: "Internet", amount: 185.00, period: 1, paid: false },
                 { id: "b12", name: "Rent", amount: 2400.00, period: 2, paid: false },
                 { id: "b17", name: "Daycare", amount: 473.00, period: 2, paid: false },
                 { id: "b18", name: "Child Support", amount: 545.50, period: 2, paid: false }
             ],
-            // PHASE 1: New Subscriptions Array
-            subscriptions: [
-                { id: "s1", name: "Netflix", amount: 22.99, active: true },
-                { id: "s2", name: "Spotify", amount: 11.99, active: true }
-            ],
+            subscriptions: [ { id: "s1", name: "Netflix", amount: 22.99, active: true }, { id: "s2", name: "Spotify", amount: 11.99, active: true } ],
             debts: [{ id: "d1", name: "TD Loan", balance: 12000, minPayment: 404 }],
             goals: { "August Camping Trip": { target: 1500, saved: 0 }, "Emergency Fund": { target: 15000, saved: 0 } },
-            oilfield: { hitchStart: "", hitchLength: 24, daysOff: 14, loaDaily: 85.72, travelPay: 0, bonusPay: 0 },
             garage: { "Ford 6.0L Bulletproof": { target: 6500, saved: 0 } },
-            // PHASE 1: New Truck Maintenance & Fuel Log
-            truckLogs: [
-                { id: "t1", date: "2026-05-15", type: "Fuel", amount: 145.50, notes: "Jasper Run" }
-            ]
+            truckLogs: []
         };
 
         let state = null; 
@@ -99,8 +74,7 @@
         const uiState = {
             keypadValue: '0', showRealityCheck: false, pendingExpenseAmount: 0, expenseName: '',
             expenseDate: new Date().toISOString().split('T')[0], expensePeriod: 1,
-            showEditModal: false, showOilfieldModal: false, editType: '', editId: null,
-            editName: '', editAmount: 0, editMinPayment: 0, editSavedAmount: 0, isListening: false
+            showEditModal: false, editType: '', editId: null, editName: '', editAmount: 0, editMinPayment: 0, editSavedAmount: 0, isListening: false
         };
 
         const STORAGE_KEY = 'lumina-finance-data';
@@ -116,18 +90,31 @@
             if (Array.isArray(raw.truckLogs)) clean.truckLogs = raw.truckLogs;
             if (raw.goals) clean.goals = { ...clean.goals, ...raw.goals };
             if (raw.garage) clean.garage = { ...clean.garage, ...raw.garage };
-            if (raw.oilfield) clean.oilfield = { ...clean.oilfield, ...raw.oilfield };
             return clean;
         };
 
-        const loadLocalState = () => {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            state = sanitizeState(saved ? JSON.parse(saved) : null);
-        };
-
+        const loadLocalState = () => { const saved = localStorage.getItem(STORAGE_KEY); state = sanitizeState(saved ? JSON.parse(saved) : null); };
         const saveLocalState = () => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); };
-
+        
         loadLocalState();
+
+        const firebaseConfig = { apiKey: "AIzaSyDDAEXVWjIAVhxbGGoXwf7DCNcpLnWbef8", authDomain: "lumina-budget-68f2e.firebaseapp.com", projectId: "lumina-budget-68f2e" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let dbRef = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                dbRef = doc(db, "budgetApp", "mainState");
+                try {
+                    const docSnap = await getDoc(dbRef);
+                    if (!docSnap.exists()) await setDoc(dbRef, state);
+                    onSnapshot(dbRef, (doc) => { if(doc.exists()) { state = sanitizeState(doc.data()); saveLocalState(); triggerRender(); } });
+                } catch(e) {}
+            }
+        });
+        signInAnonymously(auth).catch(()=>{});
 
         const finishLoading = () => {
             document.getElementById('loader').style.opacity = '0';
@@ -141,79 +128,47 @@
             if(!state) return 0;
             const days = state.payConfig.workDays.length;
             if (days === 0) return 0;
-            const gross = days * state.payConfig.grossDaily;
-            const taxFactor = 1 - (state.payConfig.taxRate / 100);
-            const loaDaily = state.oilfield?.loaDaily !== undefined ? state.oilfield.loaDaily : state.payConfig.dailyReimbursements;
-            const loa = days * loaDaily;
-            const travel = days > 0 ? Number(state.oilfield?.travelPay || 0) : 0;
-            const bonus = days > 0 ? Number(state.oilfield?.bonusPay || 0) : 0;
-            return (gross * taxFactor) - state.payConfig.fixedDeductions + loa + travel + bonus;
+            
+            const baseGross = days * state.payConfig.baseDaily;
+            const tax = baseGross * (state.payConfig.taxRate / 100);
+            const camp = days * state.payConfig.campDaily;
+            const truck = days * state.payConfig.truckDaily;
+            const kmPay = (state.payConfig.kmsDriven || 0) * state.payConfig.kmRate;
+            
+            return baseGross - tax + camp + truck + kmPay;
         };
 
         const calculateTotalBills = () => {
             if(!state) return 0;
-            const baseBills = state.bills.reduce((sum, bill) => sum + bill.amount, 0);
-            const subs = state.subscriptions.filter(s => s.active).reduce((sum, sub) => sum + sub.amount, 0);
-            return baseBills + subs;
+            return state.bills.reduce((sum, bill) => sum + bill.amount, 0) + state.subscriptions.filter(s => s.active).reduce((sum, sub) => sum + sub.amount, 0);
         };
 
         const updateFirebaseState = async (newStateObj) => {
             state = sanitizeState({ ...state, ...newStateObj });
             saveLocalState();
+            if (dbRef) { setDoc(dbRef, state, { merge: true }).catch(()=>{}); }
             triggerRender();
         };
 
-        // ----------------------------------------------------
-        // VOICE INPUT ENGINE (Web Speech API)
-        // ----------------------------------------------------
         window.toggleVoiceInput = () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("Voice input is not supported in this browser yet. Try Chrome or Safari.");
-                return;
-            }
-
-            if (uiState.isListening) return; // Prevent double clicks
-
+            if (!SpeechRecognition) { alert("Voice input is not supported in this browser yet."); return; }
+            if (uiState.isListening) return; 
             const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-
-            recognition.onstart = () => {
-                uiState.isListening = true;
-                triggerRender();
-            };
-
+            recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'en-US';
+            recognition.onstart = () => { uiState.isListening = true; triggerRender(); };
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript.toLowerCase();
-                console.log("Heard:", transcript);
-                
-                // Very basic parsing logic for Phase 1
                 const numbers = transcript.match(/\d+(\.\d{1,2})?/g);
                 if (numbers && numbers.length > 0) {
                     const amount = parseFloat(numbers[0]);
-                    uiState.keypadValue = (amount * 100).toString(); // Convert to cents for keypad logic
-                    uiState.expenseName = transcript.replace(numbers[0], '').trim();
-                    alert(`Heard: ${uiState.expenseName} for $${amount}`);
-                } else {
-                    alert("Couldn't catch a dollar amount. Please try again.");
-                }
+                    uiState.keypadValue = Math.round(amount * 100).toString();
+                    uiState.expenseName = transcript.replace(numbers[0], '').replace('dollars', '').trim();
+                } else { alert("Couldn't catch a dollar amount."); }
             };
-
-            recognition.onerror = (event) => {
-                console.error("Speech error:", event.error);
-                alert("Microphone error. Please ensure permissions are granted.");
-            };
-
-            recognition.onend = () => {
-                uiState.isListening = false;
-                triggerRender();
-            };
-
+            recognition.onend = () => { uiState.isListening = false; triggerRender(); };
             recognition.start();
         };
-
 
         const triggerRender = () => {
             if (!state) return;
@@ -233,12 +188,8 @@
             appDiv.innerHTML = html;
             
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('text-brand-accent');
-                btn.classList.add('text-slate-400');
-                if(btn.dataset.tab === currentTab) {
-                    btn.classList.add('text-brand-accent');
-                    btn.classList.remove('text-slate-400');
-                }
+                btn.classList.remove('text-brand-accent'); btn.classList.add('text-slate-400');
+                if(btn.dataset.tab === currentTab) { btn.classList.add('text-brand-accent'); btn.classList.remove('text-slate-400'); }
             });
 
             lucide.createIcons();
@@ -277,8 +228,11 @@
                     </div>
                 </section>
                 
-                <div class="glass-panel rounded-2xl p-4 mb-6">
-                    <p class="text-xs text-slate-400 mb-1">RBC Chequing Balance</p>
+                <div class="glass-panel rounded-2xl p-4 mb-6 cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-slate-500" onclick="window.openEdit('account', 'RBC Chequing')">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-xs text-slate-400 leading-tight">RBC Chequing Balance</p>
+                        <i data-lucide="edit-2" class="w-3 h-3 text-slate-500"></i>
+                    </div>
                     <p class="text-2xl font-semibold text-blue-400">${formatMoney(rbcCheq)}</p>
                 </div>
             `;
@@ -296,9 +250,10 @@
                         </div>
                         <div>
                             <p class="font-medium ${bill.paid ? 'text-slate-400 line-through' : 'text-white'}">${bill.name}</p>
+                            ${bill.date ? `<p class="text-xs text-slate-500">${bill.date}</p>` : ''}
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 pl-2">
                         <span class="font-semibold ${bill.paid ? 'text-slate-500' : 'text-slate-200'}">${formatMoney(bill.amount)}</span>
                         <button onclick="event.stopPropagation(); window.openEdit('bill', '${bill.id}')" class="p-2 -mr-2 text-slate-500 hover:text-white transition-colors">
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -320,27 +275,24 @@
                 `;
             };
 
-            // PHASE 1: Subscriptions Tracker Render
             const renderSubscriptions = () => {
                 const activeSubs = state.subscriptions.filter(s => s.active);
-                const totalSubs = activeSubs.reduce((sum, s) => sum + s.amount, 0);
                 return `
                 <section class="glass-panel rounded-3xl overflow-hidden mb-6 border-indigo-500/20">
                     <div class="p-4 bg-indigo-900/20 border-b border-white/10 flex justify-between items-center">
                         <h2 class="text-lg font-semibold flex items-center gap-2"><i data-lucide="repeat" class="w-5 h-5 text-indigo-400"></i> Subscriptions</h2>
-                        <span class="text-sm font-medium text-slate-300">Monthly: ${formatMoney(totalSubs)}</span>
+                        <span class="text-sm font-medium text-slate-300">Monthly: ${formatMoney(activeSubs.reduce((sum, s) => sum + s.amount, 0))}</span>
                     </div>
                     <div class="flex flex-col">
                         ${activeSubs.map(sub => `
                             <div class="flex items-center justify-between p-4 border-b border-white/5 last:border-0">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
-                                        <i data-lucide="play-square" class="w-4 h-4"></i>
-                                    </div>
+                                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30"><i data-lucide="play-square" class="w-4 h-4"></i></div>
                                     <p class="font-medium text-white">${sub.name}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="font-semibold text-slate-200">${formatMoney(sub.amount)}</span>
+                                    <button onclick="window.openEdit('subscription', '${sub.id}')" class="p-2 -mr-2 text-slate-500 hover:text-white transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                         `).join('')}
@@ -349,32 +301,18 @@
                 `;
             };
 
-            return `
-                <header class="mb-6"><h1 class="text-2xl font-bold text-white mb-1">Bills & Expenses</h1></header>
-                ${renderPeriodCard("Period 1 (1st - 15th)", period1)}
-                ${renderPeriodCard("Period 2 (16th - 31st)", period2)}
-                ${renderSubscriptions()}
-            `;
+            return `<header class="mb-6"><h1 class="text-2xl font-bold text-white mb-1">Bills & Expenses</h1></header>${renderPeriodCard("Period 1 (1st - 15th)", period1)}${renderPeriodCard("Period 2 (16th - 31st)", period2)}${renderSubscriptions()}`;
         };
 
         const renderKeypad = () => {
             const displayVal = uiState.keypadValue === '0' ? '0.00' : (parseInt(uiState.keypadValue) / 100).toFixed(2);
-            
             return `
-                <header class="mb-4 text-center">
-                    <h1 class="text-xl font-bold tracking-tight text-white opacity-80">Expense Entry</h1>
-                </header>
-
+                <header class="mb-4 text-center"><h1 class="text-xl font-bold tracking-tight text-white opacity-80">Expense Entry</h1></header>
                 <div class="glass-panel rounded-3xl p-5 mb-6">
                     <div class="flex gap-2 mb-3">
                         <input type="text" placeholder="What did you buy? (e.g., Fuel, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="flex-1 bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors">
-                        
-                        <!-- PHASE 1: VOICE INPUT BUTTON -->
-                        <button onclick="window.toggleVoiceInput()" class="w-12 h-12 rounded-xl flex items-center justify-center border transition-all ${uiState.isListening ? 'listening border-brand-accent' : 'bg-slate-800/50 border-white/10 text-slate-400 hover:text-white hover:border-white/30'}">
-                            <i data-lucide="mic" class="w-5 h-5"></i>
-                        </button>
+                        <button onclick="window.toggleVoiceInput()" class="w-12 h-12 rounded-xl flex items-center justify-center border transition-all ${uiState.isListening ? 'listening border-brand-accent' : 'bg-slate-800/50 border-white/10 text-slate-400 hover:text-white hover:border-white/30'}"><i data-lucide="mic" class="w-5 h-5"></i></button>
                     </div>
-
                     <div class="flex gap-3">
                         <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors text-sm" style="color-scheme: dark;">
                         <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors text-sm">
@@ -383,32 +321,26 @@
                         </select>
                     </div>
                 </div>
-
-                <div class="glass-panel rounded-3xl p-6 mb-6 text-right flex flex-col justify-end min-h-[100px]">
-                    <div class="text-5xl font-light text-white tracking-tighter overflow-hidden">$${displayVal}</div>
-                </div>
-
+                <div class="glass-panel rounded-3xl p-6 mb-6 text-right flex flex-col justify-end min-h-[100px]"><div class="text-5xl font-light text-white tracking-tighter overflow-hidden">$${displayVal}</div></div>
                 <div class="grid grid-cols-3 gap-3 max-w-[320px] mx-auto mb-6">
-                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `
-                        <button onclick="window.keypadPress('${num}')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">${num}</button>
-                    `).join('')}
-                    <button onclick="window.keypadPress('00')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-xl font-medium shadow-sm transition-transform flex items-center justify-center">00</button>
-                    <button onclick="window.keypadPress('0')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm transition-transform flex items-center justify-center">0</button>
-                    <button onclick="window.keypadPress('DEL')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-lg font-medium shadow-sm transition-transform flex items-center justify-center text-red-400">
-                        <i data-lucide="delete" class="w-6 h-6"></i>
-                    </button>
+                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `<button onclick="window.keypadPress('${num}')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm flex items-center justify-center">${num}</button>`).join('')}
+                    <button onclick="window.keypadPress('00')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-xl font-medium shadow-sm flex items-center justify-center">00</button>
+                    <button onclick="window.keypadPress('0')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-2xl font-medium shadow-sm flex items-center justify-center">0</button>
+                    <button onclick="window.keypadPress('DEL')" class="key-press h-14 rounded-2xl bg-white/5 border border-white/10 text-lg font-medium shadow-sm flex items-center justify-center text-red-400"><i data-lucide="delete" class="w-6 h-6"></i></button>
                 </div>
-
                 <div class="max-w-[320px] mx-auto pb-4">
-                    <button onclick="window.submitExpense()" class="w-full py-4 rounded-2xl bg-brand-accent text-white font-bold text-lg shadow-[0_4px_20px_rgba(16,185,129,0.4)] active:scale-95 transition-transform flex items-center justify-center gap-2">
-                        <i data-lucide="check-circle" class="w-6 h-6"></i> Enter Expense
-                    </button>
+                    <button onclick="window.submitExpense()" class="w-full py-4 rounded-2xl bg-brand-accent text-white font-bold text-lg shadow-[0_4px_20px_rgba(16,185,129,0.4)] active:scale-95 transition-transform flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-6 h-6"></i> Enter Expense</button>
                 </div>
             `;
         };
 
         const renderPlan = () => {
             const numDays = state.payConfig.workDays.length;
+            const baseGross = numDays * state.payConfig.baseDaily;
+            const tax = baseGross * (state.payConfig.taxRate / 100);
+            const camp = numDays * state.payConfig.campDaily;
+            const truck = numDays * state.payConfig.truckDaily;
+            const kmPay = (state.payConfig.kmsDriven || 0) * state.payConfig.kmRate;
             const net = calculateNetPay();
 
             let gridHtml = '';
@@ -419,21 +351,35 @@
 
             return `
                 <header class="mb-6"><h1 class="text-2xl font-bold text-white mb-1">Shift Forecaster</h1></header>
+                
+                <div class="mb-4 p-4 bg-slate-800/50 rounded-2xl border border-white/10 flex justify-between items-center glass-panel">
+                    <span class="text-slate-300 font-medium">KM Driven ($0.66/km)</span>
+                    <div class="relative">
+                        <input type="number" class="bg-slate-900/80 text-brand-accent font-bold rounded-xl py-2 pl-3 pr-8 w-28 text-right border border-white/10 focus:border-brand-accent outline-none" value="${state.payConfig.kmsDriven || 0}" onchange="window.updateKms(this.value)">
+                        <span class="absolute right-3 top-2.5 text-slate-500 text-xs font-bold">KM</span>
+                    </div>
+                </div>
+
                 <section class="glass-panel rounded-3xl p-5 mb-6 text-sm">
                     <div class="flex justify-between items-center mb-4 pb-4 border-b border-white/10">
                         <span class="text-slate-300">Days Scheduled</span>
                         <span class="font-bold text-white text-lg bg-slate-800 px-3 py-1 rounded-lg">${numDays}</span>
                     </div>
-                    <div class="flex justify-between items-center pt-2">
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between"><span class="text-slate-400">Base Income ($500/d)</span><span class="text-slate-200">${formatMoney(baseGross)}</span></div>
+                        <div class="flex justify-between text-red-300/80"><span>Tax on Base (32%)</span><span>-${formatMoney(tax)}</span></div>
+                        <div class="flex justify-between text-brand-accent"><span>Camp ($60/d)</span><span>+${formatMoney(camp)}</span></div>
+                        <div class="flex justify-between text-brand-accent"><span>Truck ($75/d)</span><span>+${formatMoney(truck)}</span></div>
+                        <div class="flex justify-between text-brand-accent"><span>KM Pay</span><span>+${formatMoney(kmPay)}</span></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-4 border-t border-white/10 mt-2">
                         <span class="font-semibold text-slate-200">Net Take-Home</span>
                         <span class="font-bold text-xl text-brand-accent">${formatMoney(net)}</span>
                     </div>
                 </section>
                 <section class="glass-panel rounded-3xl p-5">
                     <div class="grid grid-cols-7 gap-2">
-                        <div class="col-span-7 flex justify-between text-xs text-slate-500 font-medium px-1 mb-2">
-                            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
-                        </div>
+                        <div class="col-span-7 flex justify-between text-xs text-slate-500 font-medium px-1 mb-2"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
                         ${gridHtml}
                     </div>
                 </section>
@@ -441,114 +387,193 @@
         };
 
         const renderWealth = () => {
-            const totalAssets = Object.values(state.accounts).reduce((sum, val) => sum + (Number(val) || 0), 0);
-            const totalDebt = state.debts.reduce((sum, d) => sum + (Number(d.balance) || 0), 0);
-            const netWorth = totalAssets - totalDebt;
-
-            // PHASE 1: Render Truck Fuel & Maintenance Log
             const renderTruckLog = () => {
                 const logs = state.truckLogs || [];
                 if (logs.length === 0) return `<p class="text-sm text-slate-400 text-center py-4">No maintenance or fuel logs yet.</p>`;
-                
                 return logs.map(log => `
-                    <div class="flex justify-between items-center p-3 border-b border-white/5 last:border-0">
+                    <div class="flex justify-between items-center p-3 border-b border-white/5 last:border-0 group">
                         <div>
-                            <p class="font-medium text-slate-200 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full ${log.type === 'Fuel' ? 'bg-amber-500' : 'bg-blue-500'}"></span>
-                                ${log.type}: ${log.notes}
-                            </p>
+                            <p class="font-medium text-slate-200 flex items-center gap-2"><span class="w-2 h-2 rounded-full ${log.type === 'Fuel' ? 'bg-amber-500' : 'bg-blue-500'}"></span>${log.type}: ${log.notes}</p>
                             <p class="text-xs text-slate-500">${log.date}</p>
                         </div>
-                        <span class="font-semibold text-white">${formatMoney(log.amount)}</span>
+                        <div class="flex items-center gap-3">
+                            <span class="font-semibold text-white">${formatMoney(log.amount)}</span>
+                            <button onclick="window.openEdit('truckLog', '${log.id}')" class="p-2 -mr-2 text-slate-500 hover:text-white transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        </div>
                     </div>
                 `).join('');
             };
 
             return `
                 <header class="mb-6 flex justify-between items-end">
-                    <div>
-                        <h1 class="text-2xl font-bold text-white mb-1">Accounts & Wealth</h1>
-                        <p class="text-slate-400 text-sm">Net Worth: <strong class="${netWorth >= 0 ? 'text-brand-accent' : 'text-red-400'}">${formatMoney(netWorth)}</strong></p>
-                    </div>
+                    <div><h1 class="text-2xl font-bold text-white mb-1">Accounts & Wealth</h1></div>
                 </header>
 
+                <section class="glass-panel rounded-3xl p-5 mb-6 relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 opacity-10"><i data-lucide="truck" class="w-32 h-32 text-amber-500"></i></div>
+                    <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2 relative z-10">
+                        <i data-lucide="fuel" class="w-4 h-4"></i> Truck Fuel & Maintenance
+                    </h3>
+                    <div class="relative z-10 flex flex-col">${renderTruckLog()}</div>
+                </section>
+                
                 <section class="glass-panel rounded-3xl p-5 mb-6">
                     <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
                         <i data-lucide="wallet" class="w-4 h-4 text-blue-400"></i> All Accounts
                     </h3>
                     <div class="space-y-4">
                         ${Object.keys(state.accounts).map(accName => `
-                            <div class="flex justify-between items-center">
-                                <p class="font-medium text-slate-200 flex items-center gap-2">
-                                    ${accName}
-                                    <button onclick="window.openEdit('account', '${accName}')" class="text-slate-500"><i data-lucide="edit-3" class="w-3 h-3"></i></button>
-                                </p>
-                                <span class="font-semibold text-white">${formatMoney(Number(state.accounts[accName]) || 0)}</span>
+                            <div class="flex justify-between items-center group">
+                                <p class="font-medium text-slate-200 flex items-center gap-2">${accName}</p>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-white">${formatMoney(Number(state.accounts[accName]) || 0)}</span>
+                                    <button onclick="window.openEdit('account', '${accName}')" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                                </div>
                             </div>
                         `).join('')}
-                    </div>
-                </section>
-                
-                <!-- PHASE 1: Truck Log Section -->
-                <section class="glass-panel rounded-3xl p-5 mb-6 relative overflow-hidden">
-                    <div class="absolute -right-4 -bottom-4 opacity-10"><i data-lucide="truck" class="w-32 h-32 text-amber-500"></i></div>
-                    <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2 relative z-10">
-                        <i data-lucide="fuel" class="w-4 h-4"></i> Truck Fuel & Maintenance
-                    </h3>
-                    <div class="relative z-10 flex flex-col">
-                        ${renderTruckLog()}
                     </div>
                 </section>
             `;
         };
 
-        const renderModals = () => { return ''; }; // Simplified for space
+        const renderModals = () => {
+            let html = '';
+            
+            if(uiState.showRealityCheck) {
+                const amount = uiState.pendingExpenseAmount;
+                html += `
+                    <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
+                        <div class="bg-[#1c1c1e] rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl overflow-hidden">
+                            <div class="bg-[#2c2c2e] p-3 flex items-center gap-3 border-b border-slate-700/50">
+                                <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-sm">FY</div>
+                                <div><div class="font-bold text-white text-sm tracking-wide">Future You</div><div class="text-blue-500 text-[10px] font-semibold">iMessage</div></div>
+                            </div>
+                            <div class="p-5 space-y-5">
+                                <div class="relative bg-[#26252a] text-white p-4 rounded-2xl rounded-bl-none w-[90%] text-sm leading-relaxed shadow-md">
+                                    Hey man, I'm you from next month. Are you really about to drop <strong>${formatMoney(amount)}</strong> right now?<br><br>That money could go straight into the August Camping Trip or the 6.0L build. Do me a solid and stash it.
+                                    <div class="message-tail"></div>
+                                </div>
+                                <div class="space-y-3 pt-2">
+                                    <button onclick="window.handleRealityCheck('save')" class="w-full py-3.5 rounded-xl bg-brand-accent text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"><i data-lucide="tent" class="w-5 h-5"></i> Yeah, save it for Camp</button>
+                                    <button onclick="window.handleRealityCheck('spend')" class="w-full py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700 active:scale-95 transition-transform">Nah, I'm buying it</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (uiState.showEditModal) {
+                const isDebt = uiState.editType === 'debt';
+                const isGoal = uiState.editType === 'goal';
+                const isAccount = uiState.editType === 'account';
+                const isTruckLog = uiState.editType === 'truckLog';
+                const isSub = uiState.editType === 'subscription';
+                const titleText = isDebt ? 'Debt' : isGoal ? 'Goal' : isAccount ? 'Account' : isTruckLog ? 'Truck Log' : isSub ? 'Subscription' : 'Expense / Bill';
+                
+                html += `
+                    <div class="fixed inset-0 z-[110] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl transition-opacity duration-300">
+                        <div class="glass-panel rounded-3xl w-full max-w-sm border border-slate-600 p-6 shadow-2xl">
+                            <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="edit-3" class="w-5 h-5 text-brand-accent"></i> Edit ${titleText}</h3>
+                            <div class="space-y-4 mb-6">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Name / Notes</label>
+                                    <input type="text" id="edit-name-input" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 focus:border-brand-accent outline-none font-semibold ${isAccount ? 'opacity-50 cursor-not-allowed' : ''}" value="${uiState.editName}" ${isAccount ? 'readonly' : ''}>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Amount</label>
+                                    <div class="relative"><span class="absolute left-4 top-3 text-slate-400 font-medium">$</span><input type="number" id="edit-amount-input" class="w-full bg-slate-800/50 text-white rounded-xl py-3 pl-8 pr-4 border border-slate-600 focus:border-brand-accent outline-none font-semibold" value="${uiState.editAmount}" step="0.01"></div>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                ${(uiState.editType === 'bill' || uiState.editType === 'truckLog' || uiState.editType === 'subscription') ? `
+                                    <button onclick="window.deleteEdit()" class="px-4 py-3.5 rounded-xl bg-red-500/10 text-red-400 font-semibold border border-red-500/20 active:scale-95 transition-transform"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                                ` : ''}
+                                <button onclick="window.closeEdit()" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700 active:scale-95 transition-transform">Cancel</button>
+                                <button onclick="window.saveEdit()" class="flex-1 py-3.5 rounded-xl bg-brand-accent text-white font-bold shadow-lg active:scale-95 transition-transform">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return html;
+        };
 
         window.switchTab = (tab) => { currentTab = tab; triggerRender(); };
         window.toggleDay = (day) => { let n = [...state.payConfig.workDays]; if(n.includes(day)) n=n.filter(d=>d!==day); else n.push(day); updateFirebaseState({payConfig:{...state.payConfig, workDays:n}}); };
         window.toggleBill = (id) => { updateFirebaseState({ bills: state.bills.map(b => b.id === id ? { ...b, paid: !b.paid } : b) }); };
+        window.updateKms = (val) => { updateFirebaseState({ payConfig: { ...state.payConfig, kmsDriven: Number(val) } }); };
         window.updateExpData = (field, val) => { if(field === 'name') uiState.expenseName = val; if(field === 'date') uiState.expenseDate = val; if(field === 'period') uiState.expensePeriod = parseInt(val); };
         window.keypadPress = (val) => { if(val === 'DEL') uiState.keypadValue = uiState.keypadValue.slice(0, -1) || '0'; else if(uiState.keypadValue === '0' && val !== '00') uiState.keypadValue = val; else if(uiState.keypadValue !== '0' && uiState.keypadValue.length < 8) uiState.keypadValue += val; triggerRender(); };
         
         window.submitExpense = () => {
             const amount = parseInt(uiState.keypadValue) / 100;
             if (amount <= 0) return;
+            uiState.pendingExpenseAmount = amount;
+            uiState.showRealityCheck = true; 
+            triggerRender();
+        };
 
-            // Automatically check if it's Fuel to route to the Truck Log instead of standard Bills
+        window.handleRealityCheck = (choice) => {
+            const amount = uiState.pendingExpenseAmount;
+            let updates = {};
             const isFuel = uiState.expenseName.toLowerCase().includes('fuel') || uiState.expenseName.toLowerCase().includes('gas') || uiState.expenseName.toLowerCase().includes('diesel');
             const isMaint = uiState.expenseName.toLowerCase().includes('parts') || uiState.expenseName.toLowerCase().includes('oil');
 
-            if (isFuel || isMaint) {
-                const newLog = {
-                    id: 'trk_' + Date.now(),
-                    date: uiState.expenseDate,
-                    type: isFuel ? 'Fuel' : 'Maintenance',
-                    amount: amount,
-                    notes: uiState.expenseName || 'Fill up'
-                };
-                updateFirebaseState({
+            if (choice === 'save') {
+                const currentSaved = state.goals["August Camping Trip"]?.saved || 0;
+                updates = {
                     accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
-                    truckLogs: [...(state.truckLogs || []), newLog]
-                });
+                    goals: { ...state.goals, "August Camping Trip": { target: 1500, saved: currentSaved + amount } }
+                };
             } else {
-                const newBill = {
-                    id: 'exp_' + Date.now(),
-                    name: uiState.expenseName || 'Ad-hoc Expense',
-                    amount: amount,
-                    period: uiState.expensePeriod,
-                    paid: true, 
-                    date: uiState.expenseDate
-                };
-                updateFirebaseState({
-                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
-                    bills: [...state.bills, newBill]
-                });
+                if (isFuel || isMaint) {
+                    const newLog = { id: 'trk_' + Date.now(), date: uiState.expenseDate, type: isFuel ? 'Fuel' : 'Maintenance', amount: amount, notes: uiState.expenseName || 'Fill up' };
+                    updates = { accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount }, truckLogs: [...(state.truckLogs || []), newLog] };
+                    currentTab = 'wealth';
+                } else {
+                    const newBill = { id: 'exp_' + Date.now(), name: uiState.expenseName || 'Ad-hoc Expense', amount: amount, period: uiState.expensePeriod, paid: true, date: uiState.expenseDate };
+                    updates = { accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount }, bills: [...state.bills, newBill] };
+                    currentTab = 'bills';
+                }
             }
+            uiState.showRealityCheck = false; uiState.pendingExpenseAmount = 0; uiState.keypadValue = '0'; uiState.expenseName = ''; 
+            updateFirebaseState(updates);
+        };
 
-            uiState.keypadValue = '0';
-            uiState.expenseName = ''; 
-            currentTab = (isFuel || isMaint) ? 'wealth' : 'bills'; 
-            triggerRender();
+        window.openEdit = (type, idOrName) => {
+            uiState.editType = type; uiState.editId = idOrName;
+            if (type === 'bill') { const b = state.bills.find(x => x.id === idOrName); if(b) { uiState.editName = b.name; uiState.editAmount = b.amount; } }
+            else if (type === 'truckLog') { const l = state.truckLogs.find(x => x.id === idOrName); if(l) { uiState.editName = l.notes; uiState.editAmount = l.amount; } }
+            else if (type === 'subscription') { const s = state.subscriptions.find(x => x.id === idOrName); if(s) { uiState.editName = s.name; uiState.editAmount = s.amount; } }
+            else if (type === 'account') { uiState.editName = idOrName; uiState.editAmount = state.accounts[idOrName]; }
+            uiState.showEditModal = true; triggerRender();
+        };
+
+        window.closeEdit = () => { uiState.showEditModal = false; triggerRender(); };
+
+        window.deleteEdit = () => {
+            if (uiState.editType === 'bill') {
+                const b = state.bills.find(x => x.id === uiState.editId);
+                if (b) updateFirebaseState({ bills: state.bills.filter(x => x.id !== uiState.editId), accounts: { ...state.accounts, "RBC Chequing": b.paid ? state.accounts["RBC Chequing"] + b.amount : state.accounts["RBC Chequing"] } });
+            } else if (uiState.editType === 'truckLog') {
+                const l = state.truckLogs.find(x => x.id === uiState.editId);
+                if (l) updateFirebaseState({ truckLogs: state.truckLogs.filter(x => x.id !== uiState.editId), accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] + l.amount } });
+            } else if (uiState.editType === 'subscription') {
+                updateFirebaseState({ subscriptions: state.subscriptions.filter(x => x.id !== uiState.editId) });
+            }
+            uiState.showEditModal = false;
+        };
+
+        window.saveEdit = () => {
+            const nameIn = document.getElementById('edit-name-input').value;
+            const amtIn = parseFloat(document.getElementById('edit-amount-input').value) || 0;
+            if (uiState.editType === 'bill') updateFirebaseState({ bills: state.bills.map(b => b.id === uiState.editId ? { ...b, name: nameIn, amount: amtIn } : b) });
+            else if (uiState.editType === 'truckLog') updateFirebaseState({ truckLogs: state.truckLogs.map(l => l.id === uiState.editId ? { ...l, notes: nameIn, amount: amtIn } : l) });
+            else if (uiState.editType === 'subscription') updateFirebaseState({ subscriptions: state.subscriptions.map(s => s.id === uiState.editId ? { ...s, name: nameIn, amount: amtIn } : s) });
+            else if (uiState.editType === 'account') updateFirebaseState({ accounts: { ...state.accounts, [uiState.editId]: amtIn } });
+            uiState.showEditModal = false;
         };
 
         document.addEventListener("DOMContentLoaded", () => { lucide.createIcons(); });
