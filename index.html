@@ -11,6 +11,7 @@
     <title>Lumina Finance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <script>
         tailwind.config = {
@@ -121,29 +122,15 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
         // ----------------------------------------------------
         // SYSTEM CONFIGURATION & DEFAULTS
         // ----------------------------------------------------
         const DEFAULT_STATE = {
             accounts: {
-                "RBC Chequing": 2500,
-                "RBC Savings": 10000,
-                "BMO Chequing": 1200,
-                "BMO Savings": 5000,
-                "NEO": 350,
-                "Capital One": 0
+                "RBC Chequing": 2500, "RBC Savings": 10000, "BMO Chequing": 1200, 
+                "BMO Savings": 5000, "NEO": 350, "Capital One": 0
             },
-            payConfig: {
-                grossDaily: 601.87,
-                taxRate: 32.07,
-                dailyReimbursements: 85.72,
-                fixedDeductions: 132.94,
-                workDays: []
-            },
+            payConfig: { grossDaily: 601.87, taxRate: 32.07, dailyReimbursements: 85.72, fixedDeductions: 132.94, workDays: [] },
             bills: [
                 { id: "b1", name: "Internet", amount: 185.00, period: 1, paid: false },
                 { id: "b2", name: "Phone - Rogers", amount: 436.00, period: 1, paid: false },
@@ -228,8 +215,110 @@
             }, 500);
         };
 
-        // Start the app from local storage
         finishLoading();
+
+        // ----------------------------------------------------
+        // GOOGLE DRIVE BACKGROUND ENGINE
+        // ----------------------------------------------------
+        const GOOGLE_CLIENT_ID = '607768723800-v3o2gj6nj14e713rvtgab5f8viu9pb1u.apps.googleusercontent.com';
+        const DRIVE_FILE_NAME = 'lumina-finance-backup.json';
+        const DRIVE_SCOPE = 'openid profile email https://www.googleapis.com/auth/drive.appdata';
+
+        let tokenClient = null;
+        let googleAccessToken = null;
+        let driveFileId = localStorage.getItem('lumina-drive-file-id') || null;
+
+        const initGoogleTokenClient = () => {
+            if (tokenClient) return tokenClient;
+            if (!window.google?.accounts?.oauth2) return null;
+
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: DRIVE_SCOPE,
+                callback: () => {}
+            });
+            return tokenClient;
+        };
+
+        const ensureDriveAccess = () => new Promise((resolve, reject) => {
+            if (googleAccessToken) { resolve(googleAccessToken); return; }
+            try {
+                const client = initGoogleTokenClient();
+                if (!client) { reject("Google library not loaded"); return; }
+                client.callback = (response) => {
+                    if (response.error) { reject(response); return; }
+                    googleAccessToken = response.access_token;
+                    triggerRender(); // Update the top text to green
+                    resolve(googleAccessToken);
+                };
+                client.requestAccessToken({ prompt: 'consent' });
+            } catch (error) { reject(error); }
+        });
+
+        const driveFetch = async (url, options = {}) => {
+            const token = await ensureDriveAccess();
+            const response = await fetch(url, {
+                ...options,
+                headers: { Authorization: `Bearer ${token}`, ...(options.headers || {}) }
+            });
+            if (!response.ok) throw new Error(`Google Drive error ${response.status}`);
+            return response;
+        };
+
+        const findDriveBackupFile = async () => {
+            if (driveFileId) return driveFileId;
+            const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+            const url = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`;
+            const response = await driveFetch(url);
+            const data = await response.json();
+            if (data.files && data.files.length > 0) {
+                driveFileId = data.files[0].id;
+                localStorage.setItem('lumina-drive-file-id', driveFileId);
+                return driveFileId;
+            }
+            return null;
+        };
+
+        const createMultipartBody = (metadata, jsonData) => {
+            const boundary = 'lumina_drive_boundary_' + Date.now();
+            const body =
+                `--${boundary}\r\n` +
+                `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+                JSON.stringify(metadata) + `\r\n` +
+                `--${boundary}\r\n` +
+                `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+                JSON.stringify(jsonData, null, 2) + `\r\n` +
+                `--${boundary}--`;
+            return { boundary, body };
+        };
+
+        window.connectGoogleDrive = async () => {
+            try {
+                await ensureDriveAccess();
+                await findDriveBackupFile();
+            } catch (e) { console.error("Google Drive connection failed", e); }
+        };
+
+        const backupToGoogleDrive = async () => {
+            try {
+                const backupPayload = { app: 'Lumina Finance', lastUpdated: new Date().toISOString(), state };
+                const existingId = await findDriveBackupFile();
+                const metadata = existingId ? { name: DRIVE_FILE_NAME } : { name: DRIVE_FILE_NAME, parents: ['appDataFolder'] };
+                const { boundary, body } = createMultipartBody(metadata, backupPayload);
+
+                const url = existingId 
+                    ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`
+                    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id';
+                const method = existingId ? 'PATCH' : 'POST';
+
+                const response = await driveFetch(url, { method, headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
+                const result = await response.json();
+                if (result.id) {
+                    driveFileId = result.id;
+                    localStorage.setItem('lumina-drive-file-id', driveFileId);
+                }
+            } catch (error) { console.error("Silenced Backup Error:", error); }
+        };
 
         // ----------------------------------------------------
         // UTILITY FUNCTIONS & MATH ENGINE
@@ -246,8 +335,8 @@
             
             const loaDaily = state.oilfield?.loaDaily !== undefined ? state.oilfield.loaDaily : state.payConfig.dailyReimbursements;
             const loa = days * loaDaily;
-            const travel = Number(state.oilfield?.travelPay || 0);
-            const bonus = Number(state.oilfield?.bonusPay || 0);
+            const travel = days > 0 ? Number(state.oilfield?.travelPay || 0) : 0;
+            const bonus = days > 0 ? Number(state.oilfield?.bonusPay || 0) : 0;
             
             return (gross * taxFactor) - state.payConfig.fixedDeductions + loa + travel + bonus;
         };
@@ -257,6 +346,10 @@
         const updateFirebaseState = async (newStateObj) => {
             state = { ...state, ...newStateObj };
             saveLocalState();
+            
+            // Background Silent Sync
+            if (googleAccessToken) backupToGoogleDrive();
+            
             triggerRender();
         };
 
@@ -290,7 +383,7 @@
                 },
                 payConfig: {
                     ...state.payConfig,
-                    dailyReimbursements: loaDaily // Keep Plan Forecaster in sync
+                    dailyReimbursements: loaDaily
                 }
             });
 
@@ -348,11 +441,9 @@
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
             const surplus = netPay - totalBills;
-            const oilfield = state.oilfield || {
-                hitchStart: "", hitchLength: 24, daysOff: 14, loaDaily: 85.72, travelPay: 0, bonusPay: 0
-            };
+            const oilfield = state.oilfield || { hitchStart: "", hitchLength: 24, daysOff: 14, loaDaily: 85.72, travelPay: 0, bonusPay: 0 };
 
-            // CORRECT MATH FOR PROJECTED HITCH PAY (Based on Hitch Length, NOT Calendar)
+            // Math for Full Projected Hitch Pay
             const hLen = Number(oilfield.hitchLength) || 24;
             const hGross = hLen * Number(state.payConfig.grossDaily);
             const hTax = hGross * (Number(state.payConfig.taxRate) / 100);
@@ -375,6 +466,9 @@
                         <h1 class="text-3xl font-bold tracking-tight text-white">Lumina</h1>
                         <p class="text-brand-accent text-sm font-medium tracking-wider">
                             Welcome, Austin
+                        </p>
+                        <p class="text-xs ${googleAccessToken ? 'text-brand-accent' : 'text-slate-500'} mt-1 cursor-pointer" onclick="window.connectGoogleDrive()">
+                            ☁ ${googleAccessToken ? 'Auto-syncing to Google Drive' : 'Click to connect Google Drive'}
                         </p>
                     </div>
                     <div class="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-white/20">
@@ -548,10 +642,10 @@
                 </header>
 
                 <div class="glass-panel rounded-3xl p-5 mb-6">
-                    <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent">
+                    <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent transition-colors">
                     <div class="flex gap-3">
-                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
-                        <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent text-sm">
+                        <input type="date" value="${uiState.expenseDate}" onchange="window.updateExpData('date', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors text-sm" style="color-scheme: dark;">
+                        <select onchange="window.updateExpData('period', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-brand-accent transition-colors text-sm">
                             <option value="1" ${uiState.expensePeriod === 1 ? 'selected' : ''}>Period 1 (1-15)</option>
                             <option value="2" ${uiState.expensePeriod === 2 ? 'selected' : ''}>Period 2 (16-31)</option>
                         </select>
@@ -586,14 +680,11 @@
             const gross = numDays * state.payConfig.grossDaily;
             const tax = gross * (state.payConfig.taxRate / 100);
             
-            // CORRECTED MATH: Use LOA Daily setting
             const loaDaily = state.oilfield?.loaDaily !== undefined ? state.oilfield.loaDaily : state.payConfig.dailyReimbursements;
             const loa = numDays * loaDaily;
-            
-            const fixed = state.payConfig.fixedDeductions;
-            
             const travel = numDays > 0 ? Number(state.oilfield?.travelPay || 0) : 0;
             const bonus = numDays > 0 ? Number(state.oilfield?.bonusPay || 0) : 0;
+            const fixed = state.payConfig.fixedDeductions;
             
             const net = calculateNetPay();
 
@@ -921,74 +1012,6 @@
                 `;
             }
 
-            if (uiState.showOilfieldModal) {
-                const oilfield = state.oilfield || {
-                    hitchStart: "", hitchLength: 24, daysOff: 14, loaDaily: 85.72, travelPay: 0, bonusPay: 0
-                };
-
-                html += `
-                    <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl">
-                        <div class="glass-panel rounded-3xl w-full max-w-sm border border-slate-600 p-6 shadow-2xl">
-                            <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                                <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
-                                Oilfield Settings
-                            </h3>
-                            <p class="text-xs text-slate-400 mb-5">Set your hitch schedule and pay extras.</p>
-
-                            <div class="space-y-4 mb-6">
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Length</label>
-                                    <select id="oilfield-hitch-length" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                                        <option value="14" ${oilfield.hitchLength == 14 ? 'selected' : ''}>14 Days</option>
-                                        <option value="21" ${oilfield.hitchLength == 21 ? 'selected' : ''}>21 Days</option>
-                                        <option value="24" ${oilfield.hitchLength == 24 ? 'selected' : ''}>24 Days</option>
-                                        <option value="28" ${oilfield.hitchLength == 28 ? 'selected' : ''}>28 Days</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Days Off</label>
-                                    <select id="oilfield-days-off" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                                        <option value="7" ${oilfield.daysOff == 7 ? 'selected' : ''}>7 Days</option>
-                                        <option value="14" ${oilfield.daysOff == 14 ? 'selected' : ''}>14 Days</option>
-                                        <option value="18" ${oilfield.daysOff == 18 ? 'selected' : ''}>18 Days</option>
-                                        <option value="21" ${oilfield.daysOff == 21 ? 'selected' : ''}>21 Days</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Start Date</label>
-                                    <input id="oilfield-hitch-start" type="date" value="${oilfield.hitchStart || ''}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none" style="color-scheme: dark;">
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">LOA Per Day</label>
-                                    <input id="oilfield-loa-daily" type="number" step="0.01" value="${oilfield.loaDaily}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Travel Pay</label>
-                                    <input id="oilfield-travel-pay" type="number" step="0.01" value="${oilfield.travelPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Bonus Pay</label>
-                                    <input id="oilfield-bonus-pay" type="number" step="0.01" value="${oilfield.bonusPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                                </div>
-                            </div>
-
-                            <div class="flex gap-3">
-                                <button onclick="window.closeOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700">
-                                    Cancel
-                                </button>
-                                <button onclick="window.saveOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-brand-accent text-white font-bold">
-                                    Save
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
             return html;
         };
 
@@ -1015,90 +1038,6 @@
         window.toggleBill = (id) => {
             const newBills = state.bills.map(b => b.id === id ? { ...b, paid: !b.paid } : b);
             updateFirebaseState({ bills: newBills });
-        };
-
-        window.paydayRush = (periodNum) => {
-            let deductionAmount = 0;
-            const newBills = state.bills.map(b => {
-                if (b.period === periodNum && !b.paid) {
-                    deductionAmount += b.amount;
-                    return { ...b, paid: true };
-                }
-                return b;
-            });
-            const newRbcBalance = state.accounts["RBC Chequing"] - deductionAmount;
-            updateFirebaseState({
-                bills: newBills,
-                accounts: { ...state.accounts, "RBC Chequing": newRbcBalance }
-            });
-        };
-
-        window.updateExpData = (field, val) => {
-            if(field === 'name') uiState.expenseName = val;
-            if(field === 'date') uiState.expenseDate = val;
-            if(field === 'period') uiState.expensePeriod = parseInt(val);
-        };
-
-        window.keypadPress = (val) => {
-            if (val === 'DEL') {
-                uiState.keypadValue = uiState.keypadValue.length > 1 ? uiState.keypadValue.slice(0, -1) : '0';
-            } else {
-                if (uiState.keypadValue === '0' && val !== '00') {
-                    uiState.keypadValue = val;
-                } else if (uiState.keypadValue !== '0') {
-                    if(uiState.keypadValue.length < 8) uiState.keypadValue += val;
-                }
-            }
-            triggerRender();
-        };
-
-        window.submitExpense = () => {
-            const amount = parseInt(uiState.keypadValue) / 100;
-            if (amount <= 0) return;
-
-            uiState.pendingExpenseAmount = amount;
-            uiState.showRealityCheck = true;
-            triggerRender();
-        };
-
-        window.handleRealityCheck = (choice) => {
-            const amount = uiState.pendingExpenseAmount > 0 ? uiState.pendingExpenseAmount : (parseInt(uiState.keypadValue) / 100);
-            let updates = {};
-
-            if (choice === 'save') {
-                const currentSaved = state.goals?.["August Camping Trip"]?.saved || 0;
-                const currentTarget = state.goals?.["August Camping Trip"]?.target || 1500;
-                
-                updates = {
-                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
-                    goals: { 
-                        ...state.goals, 
-                        "August Camping Trip": { target: currentTarget, saved: currentSaved + amount } 
-                    }
-                };
-            } else {
-                const newBill = {
-                    id: 'exp_' + Date.now(),
-                    name: uiState.expenseName || 'Ad-hoc Expense',
-                    amount: amount,
-                    period: uiState.expensePeriod,
-                    paid: true, 
-                    date: uiState.expenseDate
-                };
-
-                updates = {
-                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
-                    bills: [...state.bills, newBill]
-                };
-            }
-
-            uiState.showRealityCheck = false;
-            uiState.pendingExpenseAmount = 0;
-            uiState.keypadValue = '0';
-            uiState.expenseName = ''; 
-            currentTab = 'bills'; 
-            
-            updateFirebaseState(updates);
         };
 
         window.openEdit = (type, idOrName) => {
@@ -1217,6 +1156,90 @@
             } else {
                 triggerRender(); 
             }
+        };
+
+        window.paydayRush = (periodNum) => {
+            let deductionAmount = 0;
+            const newBills = state.bills.map(b => {
+                if (b.period === periodNum && !b.paid) {
+                    deductionAmount += b.amount;
+                    return { ...b, paid: true };
+                }
+                return b;
+            });
+            const newRbcBalance = state.accounts["RBC Chequing"] - deductionAmount;
+            updateFirebaseState({
+                bills: newBills,
+                accounts: { ...state.accounts, "RBC Chequing": newRbcBalance }
+            });
+        };
+
+        window.updateExpData = (field, val) => {
+            if(field === 'name') uiState.expenseName = val;
+            if(field === 'date') uiState.expenseDate = val;
+            if(field === 'period') uiState.expensePeriod = parseInt(val);
+        };
+
+        window.keypadPress = (val) => {
+            if (val === 'DEL') {
+                uiState.keypadValue = uiState.keypadValue.length > 1 ? uiState.keypadValue.slice(0, -1) : '0';
+            } else {
+                if (uiState.keypadValue === '0' && val !== '00') {
+                    uiState.keypadValue = val;
+                } else if (uiState.keypadValue !== '0') {
+                    if(uiState.keypadValue.length < 8) uiState.keypadValue += val;
+                }
+            }
+            triggerRender();
+        };
+
+        window.submitExpense = () => {
+            const amount = parseInt(uiState.keypadValue) / 100;
+            if (amount <= 0) return;
+
+            uiState.pendingExpenseAmount = amount;
+            uiState.showRealityCheck = true;
+            triggerRender();
+        };
+
+        window.handleRealityCheck = (choice) => {
+            const amount = uiState.pendingExpenseAmount > 0 ? uiState.pendingExpenseAmount : (parseInt(uiState.keypadValue) / 100);
+            let updates = {};
+
+            if (choice === 'save') {
+                const currentSaved = state.goals?.["August Camping Trip"]?.saved || 0;
+                const currentTarget = state.goals?.["August Camping Trip"]?.target || 1500;
+                
+                updates = {
+                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
+                    goals: { 
+                        ...state.goals, 
+                        "August Camping Trip": { target: currentTarget, saved: currentSaved + amount } 
+                    }
+                };
+            } else {
+                const newBill = {
+                    id: 'exp_' + Date.now(),
+                    name: uiState.expenseName || 'Ad-hoc Expense',
+                    amount: amount,
+                    period: uiState.expensePeriod,
+                    paid: true, 
+                    date: uiState.expenseDate
+                };
+
+                updates = {
+                    accounts: { ...state.accounts, "RBC Chequing": state.accounts["RBC Chequing"] - amount },
+                    bills: [...state.bills, newBill]
+                };
+            }
+
+            uiState.showRealityCheck = false;
+            uiState.pendingExpenseAmount = 0;
+            uiState.keypadValue = '0';
+            uiState.expenseName = ''; 
+            currentTab = 'bills'; 
+            
+            updateFirebaseState(updates);
         };
 
         document.addEventListener("DOMContentLoaded", () => {
