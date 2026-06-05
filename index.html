@@ -178,6 +178,14 @@
                 { id: "d4", name: "RIFCO", balance: 18000, minPayment: 600 }
             ],
             goals: { "August Camping Trip": { target: 1500, saved: 0 } },
+            oilfield: {
+    hitchStart: "",
+    hitchLength: 24,
+    daysOff: 14,
+    loaDaily: 85.72,
+    travelPay: 0,
+    bonusPay: 0
+},
             garage: { "Ford 6.0L Bulletproof": { target: 6500, saved: 0 } }
         };
 
@@ -536,6 +544,19 @@
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
             const surplus = netPay - totalBills;
+            const oilfield = state.oilfield || {
+    hitchStart: "",
+    hitchLength: 24,
+    daysOff: 14,
+    loaDaily: 85.72,
+    travelPay: 0,
+    bonusPay: 0
+};
+
+const projectedHitchPay =
+    netPay +
+    Number(oilfield.travelPay || 0) +
+    Number(oilfield.bonusPay || 0);
             
             // Safety nets for missing data
             const camping = state.goals?.["August Camping Trip"] || { target: 1500, saved: 0 };
@@ -596,6 +617,43 @@
                         </div>
                     </div>
                 </section>
+                <section class="glass-panel rounded-3xl p-6 mb-6">
+    <div class="flex justify-between items-start mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
+                Oilfield Mode
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Hitch tracking and pay forecast</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hitch Length</p>
+            <p class="text-xl font-bold text-white">${oilfield.hitchLength} days</p>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Days Off</p>
+            <p class="text-xl font-bold text-brand-accent">${oilfield.daysOff} days</p>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Projected Hitch Pay</p>
+            <p class="text-lg font-bold text-white">${formatMoney(projectedHitchPay)}</p>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">LOA / Day</p>
+            <p class="text-lg font-bold text-amber-400">${formatMoney(oilfield.loaDaily)}</p>
+        </div>
+    </div>
+
+    <button onclick="window.openOilfieldSettings()" class="w-full py-3 rounded-xl bg-slate-800 text-slate-200 text-sm font-semibold border border-white/10 active:scale-95 transition-transform">
+        Edit Oilfield Settings
+    </button>
+</section>
 
                 <div class="grid grid-cols-3 gap-3 mb-6">
                     <div class="glass-panel rounded-2xl p-3 flex flex-col justify-between">
