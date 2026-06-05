@@ -2,19 +2,15 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#10b981">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumina Finance</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js"></script>
     
     <script>
         tailwind.config = {
@@ -87,10 +83,8 @@
 </head>
 <body class="text-white min-h-screen font-sans antialiased overflow-x-hidden selection:bg-brand-accent selection:text-white">
 
-    <!-- Main Content Mount -->
     <main id="app-content" class="pb-32 pt-6 px-4 max-w-lg mx-auto min-h-screen"></main>
 
-    <!-- Fixed Bottom Navigation -->
     <nav class="fixed bottom-0 w-full glass-panel border-t border-white/10 z-50 rounded-t-3xl pb-safe">
         <div class="flex justify-around items-end max-w-lg mx-auto px-2 pt-2 pb-2 relative">
             <button onclick="window.switchTab('dash')" class="nav-btn flex flex-col items-center p-2 text-slate-400 transition-colors w-16" data-tab="dash">
@@ -103,7 +97,6 @@
                 <span class="text-[10px] font-medium tracking-wide">Bills</span>
             </button>
 
-            <!-- Emphasized Keypad Button -->
             <div class="relative w-16 flex justify-center h-full">
                 <button onclick="window.switchTab('keypad')" class="absolute bottom-4 w-16 h-16 bg-brand-accent rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-[#203a43] text-white transform transition-transform active:scale-95 z-50">
                     <i data-lucide="calculator" class="w-7 h-7"></i>
@@ -122,14 +115,16 @@
         </div>
     </nav>
 
-    <!-- Global Fullscreen Loader -->
     <div id="loader" class="fixed inset-0 bg-[#0f2027] z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
         <i data-lucide="loader-2" class="w-12 h-12 text-brand-accent animate-spin mb-4"></i>
         <h1 class="text-2xl font-light tracking-widest text-white">LUMINA</h1>
     </div>
 
-    <!-- Application Logic -->
     <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
         // ----------------------------------------------------
         // SYSTEM CONFIGURATION & DEFAULTS
         // ----------------------------------------------------
@@ -179,13 +174,13 @@
             ],
             goals: { "August Camping Trip": { target: 1500, saved: 0 } },
             oilfield: {
-    hitchStart: "",
-    hitchLength: 24,
-    daysOff: 14,
-    loaDaily: 85.72,
-    travelPay: 0,
-    bonusPay: 0
-},
+                hitchStart: "",
+                hitchLength: 24,
+                daysOff: 14,
+                loaDaily: 85.72,
+                travelPay: 0,
+                bonusPay: 0
+            },
             garage: { "Ford 6.0L Bulletproof": { target: 6500, saved: 0 } }
         };
 
@@ -195,7 +190,6 @@
         let state = null; 
         let currentTab = 'dash';
         
-        // Extended UI State for the new Expense Entry feature
         const uiState = {
             keypadValue: '0',
             showRealityCheck: false,
@@ -203,7 +197,6 @@
             expenseName: '',
             expenseDate: new Date().toISOString().split('T')[0],
             expensePeriod: 1,
-            // New Edit States
             showEditModal: false,
             showOilfieldModal: false,
             editType: '',
@@ -214,17 +207,7 @@
             editSavedAmount: 0
         };
 
-        
-        const GOOGLE_CLIENT_ID = '607768723800-v3o2gj6nj14e713rvtgab5f8viu9pb1u.apps.googleusercontent.com';
         const STORAGE_KEY = 'lumina-finance-data';
-        const DRIVE_FILE_NAME = 'lumina-finance-backup.json';
-        const DRIVE_SCOPE = 'openid profile email https://www.googleapis.com/auth/drive.appdata';
-
-        let tokenClient = null;
-        let googleAccessToken = null;
-        let driveFileId = localStorage.getItem('lumina-drive-file-id') || null;
-        let driveStatus = 'Google Drive not connected';
-        let signedInUserName = localStorage.getItem('lumina-google-user-name') || 'Austin';
 
         const loadLocalState = () => {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -237,7 +220,6 @@
 
         loadLocalState();
 
-
         const finishLoading = () => {
             document.getElementById('loader').style.opacity = '0';
             setTimeout(() => {
@@ -246,7 +228,7 @@
             }, 500);
         };
 
-        // Start the app from local storage instead of Firebase/Firestore
+        // Start the app from local storage
         finishLoading();
 
         // ----------------------------------------------------
@@ -258,279 +240,69 @@
             if(!state) return 0;
             const days = state.payConfig.workDays.length;
             if (days === 0) return 0;
+            
             const gross = days * state.payConfig.grossDaily;
             const taxFactor = 1 - (state.payConfig.taxRate / 100);
-            return (gross * taxFactor) - state.payConfig.fixedDeductions + (days * state.payConfig.dailyReimbursements);
+            
+            const loaDaily = state.oilfield?.loaDaily !== undefined ? state.oilfield.loaDaily : state.payConfig.dailyReimbursements;
+            const loa = days * loaDaily;
+            const travel = Number(state.oilfield?.travelPay || 0);
+            const bonus = Number(state.oilfield?.bonusPay || 0);
+            
+            return (gross * taxFactor) - state.payConfig.fixedDeductions + loa + travel + bonus;
         };
 
         const calculateTotalBills = () => state ? state.bills.reduce((sum, bill) => sum + bill.amount, 0) : 0;
 
         const updateFirebaseState = async (newStateObj) => {
-    state = { ...state, ...newStateObj };
-
-    saveLocalState();
-
-    try {
-        if (googleAccessToken) {
-            await window.backupToGoogleDrive();
-        }
-    } catch (error) {
-        console.error('Auto backup failed:', error);
-    }
-
-    triggerRender();
-};
-
-        // ----------------------------------------------------
-        // GOOGLE DRIVE BACKUP / RESTORE
-        // ----------------------------------------------------
-        const setDriveStatus = (message) => {
-            driveStatus = message;
+            state = { ...state, ...newStateObj };
+            saveLocalState();
             triggerRender();
         };
 
-        const updateGoogleUserName = async (accessToken) => {
-            try {
-                const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                });
-
-                if (!response.ok) return;
-
-                const profile = await response.json();
-                const firstName = (profile.given_name || profile.name || '').trim().split(' ')[0];
-
-                if (firstName) {
-                    signedInUserName = firstName;
-                    localStorage.setItem('lumina-google-user-name', signedInUserName);
-                }
-            } catch (error) {
-                console.warn('Could not load Google profile name:', error);
-            }
+        window.openOilfieldSettings = () => {
+            uiState.showOilfieldModal = true;
+            triggerRender();
         };
 
-        const initGoogleTokenClient = () => {
-            if (tokenClient) return tokenClient;
-
-            if (!window.google?.accounts?.oauth2) {
-                throw new Error('Google Sign-In library has not loaded yet. Refresh and try again.');
-            }
-
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: DRIVE_SCOPE,
-                callback: () => {}
-            });
-
-            return tokenClient;
+        window.closeOilfieldSettings = () => {
+            uiState.showOilfieldModal = false;
+            triggerRender();
         };
 
-        const ensureDriveAccess = () => new Promise((resolve, reject) => {
-            if (googleAccessToken) {
-                resolve(googleAccessToken);
-                return;
-            }
+        window.saveOilfieldSettings = () => {
+            const hitchLength = Number(document.getElementById('oilfield-hitch-length').value);
+            const daysOff = Number(document.getElementById('oilfield-days-off').value);
+            const loaDaily = Number(document.getElementById('oilfield-loa-daily').value);
+            const travelPay = Number(document.getElementById('oilfield-travel-pay').value);
+            const bonusPay = Number(document.getElementById('oilfield-bonus-pay').value);
+            const hitchStart = document.getElementById('oilfield-hitch-start').value;
 
-            try {
-                const client = initGoogleTokenClient();
-                client.callback = (response) => {
-                    if (response.error) {
-                        reject(response);
-                        return;
-                    }
-                    googleAccessToken = response.access_token;
-                    updateGoogleUserName(googleAccessToken).finally(() => {
-                        setDriveStatus(`Google Drive connected as ${signedInUserName}`);
-                        resolve(googleAccessToken);
-                    });
-                };
-                client.requestAccessToken({ prompt: 'consent' });
-            } catch (error) {
-                reject(error);
-            }
-        });
-
-        const driveFetch = async (url, options = {}) => {
-            const token = await ensureDriveAccess();
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    ...(options.headers || {})
+            updateFirebaseState({
+                oilfield: {
+                    ...state.oilfield,
+                    hitchLength,
+                    daysOff,
+                    loaDaily,
+                    travelPay,
+                    bonusPay,
+                    hitchStart
+                },
+                payConfig: {
+                    ...state.payConfig,
+                    dailyReimbursements: loaDaily // Keep Plan Forecaster in sync
                 }
             });
 
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`Google Drive error ${response.status}: ${text}`);
-            }
+            uiState.showOilfieldModal = false;
+        };        
 
-            return response;
-        };
-
-        const findDriveBackupFile = async () => {
-            if (driveFileId) return driveFileId;
-
-            const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
-            const url = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name,modifiedTime)`;
-            const response = await driveFetch(url);
-            const data = await response.json();
-
-            if (data.files && data.files.length > 0) {
-                driveFileId = data.files[0].id;
-                localStorage.setItem('lumina-drive-file-id', driveFileId);
-                return driveFileId;
-            }
-
-            return null;
-        };
-
-        const createMultipartBody = (metadata, jsonData) => {
-            const boundary = 'lumina_drive_boundary_' + Date.now();
-            const body =
-                `--${boundary}\r\n` +
-                `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
-                JSON.stringify(metadata) + `\r\n` +
-                `--${boundary}\r\n` +
-                `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
-                JSON.stringify(jsonData, null, 2) + `\r\n` +
-                `--${boundary}--`;
-
-            return { boundary, body };
-        };
-
-        window.connectGoogleDrive = async () => {
-            try {
-                setDriveStatus('Connecting to Google Drive...');
-                await ensureDriveAccess();
-                await findDriveBackupFile();
-                setDriveStatus(driveFileId ? `Google Drive connected as ${signedInUserName}. Backup file found.` : `Google Drive connected as ${signedInUserName}. No backup file yet.`);
-            } catch (error) {
-                console.error(error);
-                setDriveStatus('Google Drive connection failed');
-                alert('Google Drive connection failed. Check OAuth setup and try again.');
-            }
-        };
-
-        window.backupToGoogleDrive = async () => {
-            try {
-                setDriveStatus('Backing up to Google Drive...');
-                const backupPayload = {
-                    app: 'Lumina Finance',
-                    version: 1,
-                    lastUpdated: new Date().toISOString(),
-                    state
-                };
-
-                const existingId = await findDriveBackupFile();
-                const metadata = existingId
-                    ? { name: DRIVE_FILE_NAME }
-                    : { name: DRIVE_FILE_NAME, parents: ['appDataFolder'] };
-                const { boundary, body } = createMultipartBody(metadata, backupPayload);
-
-                let url;
-                let method;
-                if (existingId) {
-                    url = `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`;
-                    method = 'PATCH';
-                } else {
-                    url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id';
-                    method = 'POST';
-                }
-
-                const response = await driveFetch(url, {
-                    method,
-                    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-                    body
-                });
-
-                const result = await response.json();
-                if (result.id) {
-                    driveFileId = result.id;
-                    localStorage.setItem('lumina-drive-file-id', driveFileId);
-                }
-
-                setDriveStatus('Backup saved to Google Drive');
-                alert('Lumina backup saved to your Google Drive.');
-            } catch (error) {
-                console.error(error);
-                setDriveStatus('Backup failed');
-                alert('Backup failed. Open the console for details or check Google Drive permissions.');
-            }
-        };
-
-        window.restoreFromGoogleDrive = async () => {
-            try {
-                const confirmed = confirm('Restore from Google Drive? This will replace the data currently stored on this device.');
-                if (!confirmed) return;
-             
-
-                setDriveStatus('Restoring from Google Drive...');
-                const existingId = await findDriveBackupFile();
-
-                if (!existingId) {
-                    setDriveStatus('No Google Drive backup found');
-                    alert('No Lumina backup file was found in your Google Drive yet.');
-                    return;
-                }
-
-                const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${existingId}?alt=media`);
-                const backupPayload = await response.json();
-                const restoredState = backupPayload.state || backupPayload;
-
-                if (!restoredState.accounts || !restoredState.bills || !restoredState.debts) {
-                    throw new Error('Backup file does not look like valid Lumina data.');
-                }
-
-                state = restoredState;
-                saveLocalState();
-                setDriveStatus('Restored from Google Drive');
-                triggerRender();
-                alert('Lumina data restored from Google Drive.');
-            } catch (error) {
-                console.error(error);
-                setDriveStatus('Restore failed');
-                alert('Restore failed. The backup may be missing or invalid.');
-            }
-        };
-   window.openOilfieldSettings = () => {
-    uiState.showOilfieldModal = true;
-    triggerRender();
-};
-
-window.closeOilfieldSettings = () => {
-    uiState.showOilfieldModal = false;
-    triggerRender();
-};
-
-window.saveOilfieldSettings = () => {
-    const hitchLength = Number(document.getElementById('oilfield-hitch-length').value);
-    const daysOff = Number(document.getElementById('oilfield-days-off').value);
-    const loaDaily = Number(document.getElementById('oilfield-loa-daily').value);
-    const travelPay = Number(document.getElementById('oilfield-travel-pay').value);
-    const bonusPay = Number(document.getElementById('oilfield-bonus-pay').value);
-    const hitchStart = document.getElementById('oilfield-hitch-start').value;
-
-    updateFirebaseState({
-        oilfield: {
-            ...state.oilfield,
-            hitchLength,
-            daysOff,
-            loaDaily,
-            travelPay,
-            bonusPay,
-            hitchStart
-        }
-    });
-
-    uiState.showOilfieldModal = false;
-};        // ----------------------------------------------------
+        // ----------------------------------------------------
         // THE ANTI-JANK RENDER ENGINE
         // ----------------------------------------------------
         const triggerRender = () => {
             if (!state) return;
             
-            // Auto-migrate new accounts & goals for existing users smoothly
             if (state.accounts && state.accounts["Wealthsimple TFSA"] === undefined) {
                 state.accounts["Wealthsimple TFSA"] = 0;
                 state.accounts["Wealthsimple RRSP"] = 0;
@@ -540,7 +312,7 @@ window.saveOilfieldSettings = () => {
                 state.goals["Emergency Fund"] = { target: 15000, saved: 0 };
             }
             if (state.investmentContribution === undefined) {
-                state.investmentContribution = null; // null means auto-calculate from surplus
+                state.investmentContribution = null;
             }
 
             const scrollPos = window.scrollY;
@@ -577,24 +349,23 @@ window.saveOilfieldSettings = () => {
             const totalBills = calculateTotalBills();
             const surplus = netPay - totalBills;
             const oilfield = state.oilfield || {
-    hitchStart: "",
-    hitchLength: 24,
-    daysOff: 14,
-    loaDaily: 85.72,
-    travelPay: 0,
-    bonusPay: 0
-};
+                hitchStart: "", hitchLength: 24, daysOff: 14, loaDaily: 85.72, travelPay: 0, bonusPay: 0
+            };
 
-const projectedHitchPay =
-    netPay +
-    Number(oilfield.travelPay || 0) +
-    Number(oilfield.bonusPay || 0);
+            // CORRECT MATH FOR PROJECTED HITCH PAY (Based on Hitch Length, NOT Calendar)
+            const hLen = Number(oilfield.hitchLength) || 24;
+            const hGross = hLen * Number(state.payConfig.grossDaily);
+            const hTax = hGross * (Number(state.payConfig.taxRate) / 100);
+            const hLoa = hLen * Number(oilfield.loaDaily);
+            const hTravel = Number(oilfield.travelPay) || 0;
+            const hBonus = Number(oilfield.bonusPay) || 0;
+            const hFixed = Number(state.payConfig.fixedDeductions) || 0;
             
-            // Safety nets for missing data
+            const projectedHitchPay = hGross - hTax - hFixed + hLoa + hTravel + hBonus;
+            
             const camping = state.goals?.["August Camping Trip"] || { target: 1500, saved: 0 };
             const campProgress = Math.min(((Number(camping.saved) || 0) / (Number(camping.target) || 1)) * 100, 100);
 
-            // Safe Cash Math
             const rbcCheq = Number(state.accounts["RBC Chequing"]) || 0;
             const neoCash = Number(state.accounts["NEO"]) || 0;
 
@@ -603,32 +374,13 @@ const projectedHitchPay =
                     <div>
                         <h1 class="text-3xl font-bold tracking-tight text-white">Lumina</h1>
                         <p class="text-brand-accent text-sm font-medium tracking-wider">
-                            Welcome, ${signedInUserName || 'Austin'}
+                            Welcome, Austin
                         </p>
-                        <p class="text-xs text-slate-500 mt-1">
-    ☁ Auto-synced with Google Drive
-</p>
                     </div>
                     <div class="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center border border-white/20">
                         <i data-lucide="user" class="w-5 h-5 text-slate-300"></i>
                     </div>
                 </header>
-
-                <section class="glass-panel rounded-3xl p-4 mb-6">
-                    <div class="flex items-center justify-between gap-3 mb-3">
-                        <div>
-                            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
-                                <i data-lucide="cloud" class="w-4 h-4 text-blue-300"></i> Google Drive Backup
-                            </h2>
-                            <p class="text-xs text-slate-400 mt-1">${driveStatus}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="window.connectGoogleDrive()" class="py-2.5 rounded-xl bg-blue-600/80 text-white text-xs font-semibold active:scale-95 transition-transform">Connect</button>
-                        <button onclick="window.backupToGoogleDrive()" class="py-2.5 rounded-xl bg-brand-accent text-white text-xs font-semibold active:scale-95 transition-transform">Backup</button>
-                        <button onclick="window.restoreFromGoogleDrive()" class="py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold border border-white/10 active:scale-95 transition-transform">Restore</button>
-                    </div>
-                </section>
 
                 <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-brand-accent/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
@@ -649,43 +401,41 @@ const projectedHitchPay =
                         </div>
                     </div>
                 </section>
+                
                 <section class="glass-panel rounded-3xl p-6 mb-6">
-    <div class="flex justify-between items-start mb-4">
-        <div>
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
-                Oilfield Mode
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">Hitch tracking and pay forecast</p>
-        </div>
-    </div>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
+                                Oilfield Mode
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Hitch tracking and pay forecast</p>
+                        </div>
+                    </div>
 
-    <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
-            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hitch Length</p>
-            <p class="text-xl font-bold text-white">${oilfield.hitchLength} days</p>
-        </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hitch Length</p>
+                            <p class="text-xl font-bold text-white">${oilfield.hitchLength} days</p>
+                        </div>
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Days Off</p>
+                            <p class="text-xl font-bold text-brand-accent">${oilfield.daysOff} days</p>
+                        </div>
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Projected Hitch Pay</p>
+                            <p class="text-lg font-bold text-white">${formatMoney(projectedHitchPay)}</p>
+                        </div>
+                        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">LOA / Day</p>
+                            <p class="text-lg font-bold text-amber-400">${formatMoney(oilfield.loaDaily)}</p>
+                        </div>
+                    </div>
 
-        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
-            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Days Off</p>
-            <p class="text-xl font-bold text-brand-accent">${oilfield.daysOff} days</p>
-        </div>
-
-        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
-            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Projected Hitch Pay</p>
-            <p class="text-lg font-bold text-white">${formatMoney(projectedHitchPay)}</p>
-        </div>
-
-        <div class="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
-            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">LOA / Day</p>
-            <p class="text-lg font-bold text-amber-400">${formatMoney(oilfield.loaDaily)}</p>
-        </div>
-    </div>
-
-    <button onclick="window.openOilfieldSettings()" class="w-full py-3 rounded-xl bg-slate-800 text-slate-200 text-sm font-semibold border border-white/10 active:scale-95 transition-transform">
-        Edit Oilfield Settings
-    </button>
-</section>
+                    <button onclick="window.openOilfieldSettings()" class="w-full py-3 rounded-xl bg-slate-800 text-slate-200 text-sm font-semibold border border-white/10 active:scale-95 transition-transform">
+                        Edit Oilfield Settings
+                    </button>
+                </section>
 
                 <div class="grid grid-cols-3 gap-3 mb-6">
                     <div class="glass-panel rounded-2xl p-3 flex flex-col justify-between">
@@ -797,7 +547,6 @@ const projectedHitchPay =
                     <h1 class="text-xl font-bold tracking-tight text-white opacity-80">Expense Entry</h1>
                 </header>
 
-                <!-- New Data Inputs for the Receipt -->
                 <div class="glass-panel rounded-3xl p-5 mb-6">
                     <input type="text" placeholder="What did you buy? (e.g., Gas, Coffee)" value="${uiState.expenseName}" oninput="window.updateExpData('name', this.value)" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 text-white mb-3 outline-none focus:border-brand-accent">
                     <div class="flex gap-3">
@@ -836,8 +585,16 @@ const projectedHitchPay =
             const numDays = state.payConfig.workDays.length;
             const gross = numDays * state.payConfig.grossDaily;
             const tax = gross * (state.payConfig.taxRate / 100);
-            const reimbursements = numDays * state.payConfig.dailyReimbursements;
+            
+            // CORRECTED MATH: Use LOA Daily setting
+            const loaDaily = state.oilfield?.loaDaily !== undefined ? state.oilfield.loaDaily : state.payConfig.dailyReimbursements;
+            const loa = numDays * loaDaily;
+            
             const fixed = state.payConfig.fixedDeductions;
+            
+            const travel = numDays > 0 ? Number(state.oilfield?.travelPay || 0) : 0;
+            const bonus = numDays > 0 ? Number(state.oilfield?.bonusPay || 0) : 0;
+            
             const net = calculateNetPay();
 
             let gridHtml = '';
@@ -863,7 +620,9 @@ const projectedHitchPay =
                         <div class="flex justify-between"><span class="text-slate-400">Gross Income</span><span class="text-slate-200">${formatMoney(gross)}</span></div>
                         <div class="flex justify-between text-red-300/80"><span>Est. Tax (${state.payConfig.taxRate}%)</span><span>-${formatMoney(tax)}</span></div>
                         <div class="flex justify-between text-red-300/80"><span>Fixed Deductions</span><span>-${formatMoney(fixed)}</span></div>
-                        <div class="flex justify-between text-brand-accent"><span>Reimbursements</span><span>+${formatMoney(reimbursements)}</span></div>
+                        <div class="flex justify-between text-brand-accent"><span>LOA / Per Diem</span><span>+${formatMoney(loa)}</span></div>
+                        ${travel > 0 ? `<div class="flex justify-between text-brand-accent"><span>Travel Pay</span><span>+${formatMoney(travel)}</span></div>` : ''}
+                        ${bonus > 0 ? `<div class="flex justify-between text-brand-accent"><span>Bonus Pay</span><span>+${formatMoney(bonus)}</span></div>` : ''}
                     </div>
                     <div class="flex justify-between items-center pt-4 border-t border-white/10 mt-2">
                         <span class="font-semibold text-slate-200">Net Take-Home</span>
@@ -882,34 +641,28 @@ const projectedHitchPay =
             `;
         };
 
-        // 5. WEALTH & ACCOUNTS (Replaces Garage)
         const renderWealth = () => {
             const netPay = calculateNetPay();
             const totalBills = calculateTotalBills();
             const surplus = Math.max(0, netPay - totalBills); 
             
-            // Debt Logic
             const sortedDebts = [...state.debts].sort((a,b) => a.balance - b.balance);
             const smallestDebt = sortedDebts[0];
             const totalDebt = state.debts.reduce((sum, d) => sum + (Number(d.balance) || 0), 0);
             
-            // Calculate Total Cash & Investments (Safety Nets for NaN)
             const totalAssets = Object.values(state.accounts).reduce((sum, val) => sum + (Number(val) || 0), 0);
             const netWorth = totalAssets - totalDebt;
             
-            // Emergency Fund Logic
             const emerg = state.goals["Emergency Fund"] || { target: 15000, saved: 0 };
             const emergProgress = Math.min(((Number(emerg.saved) || 0) / (Number(emerg.target) || 1)) * 100, 100);
 
-            // Investment Projection Calculator Logic
             const tfsa = Number(state.accounts["Wealthsimple TFSA"]) || 0;
             const rrsp = Number(state.accounts["Wealthsimple RRSP"]) || 0;
             const principal = tfsa + rrsp;
             const autoSurplus = surplus > 0 ? surplus : 0;
             const monthlyAddition = state.investmentContribution !== null && state.investmentContribution !== undefined ? Number(state.investmentContribution) : autoSurplus;
-            const rate = 0.07; // Conservative 7% annual market return
+            const rate = 0.07; 
             
-            // Compound interest formula
             const r_n = rate / 12;
             const calcProj = (years) => {
                 const months = years * 12;
@@ -929,7 +682,6 @@ const projectedHitchPay =
                     </div>
                 </header>
 
-                <!-- Investment Calculator -->
                 <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden bg-gradient-to-br from-indigo-900/40 to-slate-900/60 border-indigo-500/30">
                     <div class="absolute -right-4 -top-4 opacity-20">
                         <i data-lucide="trending-up" class="w-32 h-32 text-indigo-400"></i>
@@ -961,7 +713,6 @@ const projectedHitchPay =
                     </div>
                 </section>
 
-                <!-- Emergency Fund -->
                 <section class="glass-panel rounded-3xl p-6 mb-6">
                      <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
                         <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500"></i> Emergency Fund
@@ -982,7 +733,6 @@ const projectedHitchPay =
                     </div>
                 </section>
 
-                <!-- All Accounts List -->
                 <section class="glass-panel rounded-3xl p-5 mb-6">
                     <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
                         <i data-lucide="wallet" class="w-4 h-4 text-blue-400"></i> All Accounts
@@ -992,13 +742,12 @@ const projectedHitchPay =
                             const primaryAccounts = ["RBC Chequing", "RBC Savings", "BMO Chequing", "BMO Savings", "Wealthsimple TFSA", "Wealthsimple RRSP", "NEO HISA", "NEO"];
                             const allAccountKeys = Object.keys(state.accounts);
                             
-                            // Sort logic: Named accounts first, numbered accounts bottom
                             const extraKeys = allAccountKeys.filter(k => !primaryAccounts.includes(k));
                             extraKeys.sort((a, b) => {
-                                const aIsNum = /^\d/.test(a); // Starts with a number
+                                const aIsNum = /^\d/.test(a);
                                 const bIsNum = /^\d/.test(b);
-                                if (aIsNum && !bIsNum) return 1;  // Push numbered down
-                                if (!aIsNum && bIsNum) return -1; // Keep named on top
+                                if (aIsNum && !bIsNum) return 1;  
+                                if (!aIsNum && bIsNum) return -1; 
                                 return a.localeCompare(b);
                             });
 
@@ -1022,7 +771,6 @@ const projectedHitchPay =
                     </div>
                 </section>
 
-                <!-- Debt Snowball -->
                 <section class="glass-panel rounded-3xl p-5 mb-6">
                     <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
                         <i data-lucide="crosshair" class="w-4 h-4 text-red-400"></i> Active Debts
@@ -1044,13 +792,37 @@ const projectedHitchPay =
                         `).join('')}
                     </div>
                 </section>
+                
+                <section class="glass-panel rounded-3xl p-6 mb-6 relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 opacity-10">
+                        <i data-lucide="wrench" class="w-32 h-32 text-slate-400"></i>
+                    </div>
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+                        <i data-lucide="car-front" class="w-4 h-4 text-white"></i> The Garage
+                    </h2>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-end mb-2">
+                            <p class="font-medium text-white flex items-center gap-2">
+                                Ford 6.0L Build
+                                <button onclick="window.openEdit('goal', 'Ford 6.0L Bulletproof')" class="text-slate-500 hover:text-white transition-colors active:scale-95">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </p>
+                            <p class="text-xs text-slate-400">
+                                ${formatMoney(Number(state.garage?.["Ford 6.0L Bulletproof"]?.saved) || 0)} / ${formatMoney(Number(state.garage?.["Ford 6.0L Bulletproof"]?.target) || 6500)}
+                            </p>
+                        </div>
+                        <div class="h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full bg-slate-400 rounded-full transition-all duration-1000" style="width: ${Math.min(((Number(state.garage?.["Ford 6.0L Bulletproof"]?.saved) || 0) / (Number(state.garage?.["Ford 6.0L Bulletproof"]?.target) || 6500)) * 100, 100)}%"></div>
+                        </div>
+                    </div>
+                </section>
             `;
         };
 
         const renderModals = () => {
             let html = '';
             
-            // 1. Reality Check Modal
             if(uiState.showRealityCheck) {
                 const amount = uiState.pendingExpenseAmount > 0 ? uiState.pendingExpenseAmount : (parseInt(uiState.keypadValue) / 100);
                 html += `
@@ -1085,7 +857,6 @@ const projectedHitchPay =
                 `;
             }
 
-            // 2. Dynamic Edit Modal
             if (uiState.showEditModal) {
                 const isDebt = uiState.editType === 'debt';
                 const isGoal = uiState.editType === 'goal';
@@ -1150,79 +921,75 @@ const projectedHitchPay =
                 `;
             }
 
-        if (uiState.showOilfieldModal) {
-    const oilfield = state.oilfield || {
-        hitchStart: "",
-        hitchLength: 24,
-        daysOff: 14,
-        loaDaily: 85.72,
-        travelPay: 0,
-        bonusPay: 0
-    };
+            if (uiState.showOilfieldModal) {
+                const oilfield = state.oilfield || {
+                    hitchStart: "", hitchLength: 24, daysOff: 14, loaDaily: 85.72, travelPay: 0, bonusPay: 0
+                };
 
-    html += `
-        <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl">
-            <div class="glass-panel rounded-3xl w-full max-w-sm border border-slate-600 p-6 shadow-2xl">
-                <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                    <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
-                    Oilfield Settings
-                </h3>
-                <p class="text-xs text-slate-400 mb-5">Set your hitch schedule and pay extras.</p>
+                html += `
+                    <div class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-xl">
+                        <div class="glass-panel rounded-3xl w-full max-w-sm border border-slate-600 p-6 shadow-2xl">
+                            <h3 class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                                <i data-lucide="truck" class="w-5 h-5 text-brand-accent"></i>
+                                Oilfield Settings
+                            </h3>
+                            <p class="text-xs text-slate-400 mb-5">Set your hitch schedule and pay extras.</p>
 
-                <div class="space-y-4 mb-6">
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Length</label>
-                        <select id="oilfield-hitch-length" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                            <option value="14" ${oilfield.hitchLength == 14 ? 'selected' : ''}>14 Days</option>
-                            <option value="21" ${oilfield.hitchLength == 21 ? 'selected' : ''}>21 Days</option>
-                            <option value="24" ${oilfield.hitchLength == 24 ? 'selected' : ''}>24 Days</option>
-                            <option value="28" ${oilfield.hitchLength == 28 ? 'selected' : ''}>28 Days</option>
-                        </select>
+                            <div class="space-y-4 mb-6">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Length</label>
+                                    <select id="oilfield-hitch-length" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                                        <option value="14" ${oilfield.hitchLength == 14 ? 'selected' : ''}>14 Days</option>
+                                        <option value="21" ${oilfield.hitchLength == 21 ? 'selected' : ''}>21 Days</option>
+                                        <option value="24" ${oilfield.hitchLength == 24 ? 'selected' : ''}>24 Days</option>
+                                        <option value="28" ${oilfield.hitchLength == 28 ? 'selected' : ''}>28 Days</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Days Off</label>
+                                    <select id="oilfield-days-off" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                                        <option value="7" ${oilfield.daysOff == 7 ? 'selected' : ''}>7 Days</option>
+                                        <option value="14" ${oilfield.daysOff == 14 ? 'selected' : ''}>14 Days</option>
+                                        <option value="18" ${oilfield.daysOff == 18 ? 'selected' : ''}>18 Days</option>
+                                        <option value="21" ${oilfield.daysOff == 21 ? 'selected' : ''}>21 Days</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Start Date</label>
+                                    <input id="oilfield-hitch-start" type="date" value="${oilfield.hitchStart || ''}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none" style="color-scheme: dark;">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">LOA Per Day</label>
+                                    <input id="oilfield-loa-daily" type="number" step="0.01" value="${oilfield.loaDaily}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Travel Pay</label>
+                                    <input id="oilfield-travel-pay" type="number" step="0.01" value="${oilfield.travelPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Bonus Pay</label>
+                                    <input id="oilfield-bonus-pay" type="number" step="0.01" value="${oilfield.bonusPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button onclick="window.closeOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700">
+                                    Cancel
+                                </button>
+                                <button onclick="window.saveOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-brand-accent text-white font-bold">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
                     </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Days Off</label>
-                        <select id="oilfield-days-off" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                            <option value="7" ${oilfield.daysOff == 7 ? 'selected' : ''}>7 Days</option>
-                            <option value="14" ${oilfield.daysOff == 14 ? 'selected' : ''}>14 Days</option>
-                            <option value="18" ${oilfield.daysOff == 18 ? 'selected' : ''}>18 Days</option>
-                            <option value="21" ${oilfield.daysOff == 21 ? 'selected' : ''}>21 Days</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Hitch Start Date</label>
-                        <input id="oilfield-hitch-start" type="date" value="${oilfield.hitchStart || ''}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">LOA Per Day</label>
-                        <input id="oilfield-loa-daily" type="number" step="0.01" value="${oilfield.loaDaily}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Travel Pay</label>
-                        <input id="oilfield-travel-pay" type="number" step="0.01" value="${oilfield.travelPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-2 uppercase tracking-wider">Bonus Pay</label>
-                        <input id="oilfield-bonus-pay" type="number" step="0.01" value="${oilfield.bonusPay || 0}" class="w-full bg-slate-800/50 text-white rounded-xl py-3 px-4 border border-slate-600 outline-none">
-                    </div>
-                </div>
-
-                <div class="flex gap-3">
-                    <button onclick="window.closeOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-semibold border border-slate-700">
-                        Cancel
-                    </button>
-                    <button onclick="window.saveOilfieldSettings()" class="flex-1 py-3.5 rounded-xl bg-brand-accent text-white font-bold">
-                        Save
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}    return html;
+                `;
+            }
+            return html;
         };
 
         // ----------------------------------------------------
@@ -1266,7 +1033,6 @@ const projectedHitchPay =
             });
         };
 
-        // Update the Expense Form state dynamically
         window.updateExpData = (field, val) => {
             if(field === 'name') uiState.expenseName = val;
             if(field === 'date') uiState.expenseDate = val;
@@ -1290,14 +1056,9 @@ const projectedHitchPay =
             const amount = parseInt(uiState.keypadValue) / 100;
             if (amount <= 0) return;
 
-            if (amount > 50) {
-                uiState.pendingExpenseAmount = amount;
-                uiState.showRealityCheck = true;
-                triggerRender();
-            } else {
-                // If it's small, skip the text message and just buy it
-                window.handleRealityCheck('spend_auto');
-            }
+            uiState.pendingExpenseAmount = amount;
+            uiState.showRealityCheck = true;
+            triggerRender();
         };
 
         window.handleRealityCheck = (choice) => {
@@ -1305,7 +1066,6 @@ const projectedHitchPay =
             let updates = {};
 
             if (choice === 'save') {
-                // FIX: Safely access current saved amount
                 const currentSaved = state.goals?.["August Camping Trip"]?.saved || 0;
                 const currentTarget = state.goals?.["August Camping Trip"]?.target || 1500;
                 
@@ -1317,13 +1077,12 @@ const projectedHitchPay =
                     }
                 };
             } else {
-                // Spend it - Deduct from RBC AND add to the Bills list as a receipt!
                 const newBill = {
                     id: 'exp_' + Date.now(),
                     name: uiState.expenseName || 'Ad-hoc Expense',
                     amount: amount,
                     period: uiState.expensePeriod,
-                    paid: true, // Mark it as already paid so it doesn't add to unpaid totals
+                    paid: true, 
                     date: uiState.expenseDate
                 };
 
@@ -1333,19 +1092,15 @@ const projectedHitchPay =
                 };
             }
 
-            // Reset UI
             uiState.showRealityCheck = false;
             uiState.pendingExpenseAmount = 0;
             uiState.keypadValue = '0';
             uiState.expenseName = ''; 
-            currentTab = 'bills'; // Jump to bills to show them the receipt
+            currentTab = 'bills'; 
             
             updateFirebaseState(updates);
         };
 
-        // ----------------------------------------------------
-        // EDIT CONTROLLERS
-        // ----------------------------------------------------
         window.openEdit = (type, idOrName) => {
             uiState.editType = type;
             uiState.editId = idOrName;
@@ -1400,15 +1155,12 @@ const projectedHitchPay =
                 
                 if (bill) {
                     updates.bills = state.bills.filter(b => b.id !== uiState.editId);
-                    
-                    // If the expense was already deducted, refund it!
                     if (bill.paid) {
                         updates.accounts = { 
                             ...state.accounts, 
                             "RBC Chequing": state.accounts["RBC Chequing"] + bill.amount 
                         };
                     }
-                    
                     uiState.showEditModal = false;
                     updateFirebaseState(updates);
                 }
@@ -1437,7 +1189,6 @@ const projectedHitchPay =
             } else if (uiState.editType === 'goal') {
                 const savedAmountInput = parseFloat(document.getElementById('edit-saved-input').value);
                 if (nameInput && !isNaN(amountInput) && !isNaN(savedAmountInput)) {
-                    // Check if it's an old garage item or a goal
                     if (state.garage?.[uiState.editId]) {
                         const newGarage = { ...state.garage };
                         delete newGarage[uiState.editId]; 
@@ -1464,7 +1215,7 @@ const projectedHitchPay =
             if (Object.keys(updates).length > 0) {
                 updateFirebaseState(updates);
             } else {
-                triggerRender(); // Close without saving if inputs were invalid
+                triggerRender(); 
             }
         };
 
@@ -1473,18 +1224,5 @@ const projectedHitchPay =
         });
 
     </script>
-    <script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-            .then(registration => {
-                console.log('Service Worker Registered');
-            })
-            .catch(error => {
-                console.log('Service Worker Registration Failed:', error);
-            });
-    });
-}
-</script>
 </body>
 </html>
