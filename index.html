@@ -462,6 +462,7 @@
             try {
                 const confirmed = confirm('Restore from Google Drive? This will replace the data currently stored on this device.');
                 if (!confirmed) return;
+             
 
                 setDriveStatus('Restoring from Google Drive...');
                 const existingId = await findDriveBackupFile();
@@ -491,6 +492,33 @@
                 alert('Restore failed. The backup may be missing or invalid.');
             }
         };
+        window.openOilfieldSettings = () => {
+    const hitchLength = prompt(
+        "Hitch Length (14, 21, 24, 28)",
+        state.oilfield?.hitchLength || 24
+    );
+
+    const daysOff = prompt(
+        "Days Off (7, 14, 18)",
+        state.oilfield?.daysOff || 14
+    );
+
+    const loaDaily = prompt(
+        "LOA Per Day",
+        state.oilfield?.loaDaily || 85.72
+    );
+
+    if (!hitchLength || !daysOff || !loaDaily) return;
+
+    updateFirebaseState({
+        oilfield: {
+            ...state.oilfield,
+            hitchLength: Number(hitchLength),
+            daysOff: Number(daysOff),
+            loaDaily: Number(loaDaily)
+        }
+    });
+};
 
         // ----------------------------------------------------
         // THE ANTI-JANK RENDER ENGINE
